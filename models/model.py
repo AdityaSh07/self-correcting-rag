@@ -4,7 +4,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.runnables import RunnableLambda
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage
 
-from prompts.prompts import system_text, check_answer
+from prompts.prompts import check_answer, system_text
 
 from dotenv import load_dotenv
 
@@ -57,7 +57,7 @@ def get_retriever():
     # SETUP RETRIEVER AND CONTEXT
     retriever = vec_store.as_retriever(
         search_type = 'mmr',
-        search_kwargs={'k': 3, 'lambda_mult': 0.7})
+        search_kwargs={'k': 5, 'lambda_mult': 0.8})
 
     return retriever
 
