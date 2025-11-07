@@ -3,6 +3,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.runnables import RunnableLambda
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage
+from operator import add
 
 from pydantic import BaseModel, Field
 
@@ -147,7 +148,7 @@ class GraphState(TypedDict):
     generation: str
     documents: list[str]
     filter_documents: list[str]
-    unfilter_documents: list[str]  
+    unfilter_documents: list[str]
 
 
 
@@ -155,15 +156,8 @@ class GraphState(TypedDict):
 def retrieve_context(state: GraphState):
     
     question = state['question']
-    
-    # Context chain adapted from your original structure
-    context_chain = (
-        RETRIEVER 
-        | RunnableLambda(format_docs) 
-        | StrOutputParser()
-    )
-    
-    documents = context_chain.invoke(question)
+
+    documents = RETRIEVER.invoke(question)
 
     return {"documents": documents, "question": question, 'chat_history': [HumanMessage(question)]}
 
@@ -175,10 +169,12 @@ def grade_documents(state: GraphState):
     question = state['question']
     documents = state['documents']
     
+    prompt = grade_prompt.invoke({"question":question, "document":documents})
+
     filtered_docs = []
     unfiltered_docs = []
     for doc in documents:
-        score=structured_relevance_grader.invoke({"question":question, "document":doc})
+        score=structured_relevance_grader.invoke(prompt)
         grade=score.binary_score
         
         if grade=='yes':
@@ -252,8 +248,10 @@ def grade_generation_vs_documents_and_question(state:GraphState):
     question= state['question']
     documents = state['documents']
     generation = state["generation"]
+
+    prompt = hallucination_prompt.invoke({"documents":documents,"generation":generation})
     
-    score = structured_hallucination_grader.invoke({"documents":documents,"generation":generation})
+    score = structured_hallucination_grader.invoke(prompt)
     
     grade = score.binary_score
     
@@ -263,7 +261,8 @@ def grade_generation_vs_documents_and_question(state:GraphState):
         
         print("---GRADE GENERATION vs QUESTION ---")
         
-        score = structured_answer_grader.invoke({"question":question,"generation":generation})
+        ans_prompt = answer_prompt.invoke({"question":question,"generation":generation})
+        score = structured_answer_grader.invoke(ans_prompt)
         
         grade = score.binary_score
         
@@ -281,32 +280,32 @@ def grade_generation_vs_documents_and_question(state:GraphState):
 #-------------------------------------------- graph creation --------------------------------------------------------------
 
 graph = StateGraph(GraphState)
-graph.add_node("Docs_Vector_Retrieve", retrieve_context)
-graph.add_node("Grading_Generated_Documents", grade_documents) 
-graph.add_node("Content_Generator", generate)
-graph.add_node("Transform_User_Query", transform_query)
+graph.add_node("vector_retrieved_docs", retrieve_context)
+graph.add_node("grading_documents", grade_documents) 
+graph.add_node("content_generator", generate)
+graph.add_node("transform_user_query", transform_query)
 
 
-graph.add_edge(START,"Docs_Vector_Retrieve")
-graph.add_edge("Docs_Vector_Retrieve","Grading_Generated_Documents")
-graph.add_conditional_edges("Grading_Generated_Documents",
+graph.add_edge(START,"vector_retrieved_docs")
+graph.add_edge("vector_retrieved_docs","grading_documents")
+graph.add_conditional_edges("grading_documents",
                             decide_to_generate,
                             {
-                            "generate": "Content_Generator",
-                            "transform_query": "Transform_User_Query"
+                            "generate": "content_generator",
+                            "transform_query": "transform_user_query"
                             }
                             )
-graph.add_conditional_edges("Content_Generator",
+graph.add_conditional_edges("content_generator",
                             grade_generation_vs_documents_and_question,
                             {
                             "useful": END,
-                            "not useful": "Transform_User_Query",
+                            "not useful": "transform_user_query",
                             }
                             )
-graph.add_conditional_edges("Transform_User_Query",
+graph.add_conditional_edges("transform_user_query",
                 decide_to_generate_after_transformation,
                 {
-                "Retriever":"Docs_Vector_Retrieve",
+                "Retriever":"vector_retrieved_docs",
                 "query_not_at_all_relevant":END
                 }
                 )
