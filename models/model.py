@@ -4,7 +4,10 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.runnables import RunnableLambda
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage
 
-from prompts.prompts import check_answer, system_text
+from pydantic import BaseModel, Field
+
+from prompts.prompts import system_text_hallucination, system_text_relevance, system_text_answer_eval, system
+from langchain import hub
 
 from dotenv import load_dotenv
 
@@ -24,6 +27,8 @@ load_dotenv()
 # MODELS DEFINED
 model = ChatGoogleGenerativeAI(model = 'gemini-2.5-flash', temperature=0.8)
 embed_model = HuggingFaceEmbeddings(model_name = 'sentence-transformers/all-MiniLM-L6-v2')
+rag_prompt = hub.pull("rlm/rag-prompt")
+rag_chain = rag_prompt | model
 
 
 # --------------------------------- CREATE RETRIEVER ---------------------------
@@ -68,26 +73,88 @@ def format_docs(retrieved_docs):
     return '\n\n'.join(docs.page_content for docs in retrieved_docs)
 
 
+# ------------------- GRADING -----------------------------------------------
+
+
+class GradeDocuments(BaseModel):
+    """Binary score for relevance check on retrieved documents."""
+
+    binary_score: str = Field(
+        description="Documents are relevant to the question, 'yes' or 'no'"
+    )
+
+class GradeHallucinations(BaseModel):
+    """Binary score for hallucination present in generation answer."""
+
+    binary_score: str = Field(
+        description="Answer is grounded in the facts, 'yes' or 'no'"
+    )
+
+
+class GradeAnswer(BaseModel):
+    """Binary score to assess answer addresses question."""
+
+    binary_score: str = Field(
+        description="Answer addresses the question, 'yes' or 'no'"
+    )
+
+
+structured_relevance_grader = model.with_structured_output(GradeDocuments)
+structured_hallucination_grader = model.with_structured_output(GradeHallucinations)
+structured_answer_grader = model.with_structured_output(GradeAnswer)
+
+grade_prompt = ChatPromptTemplate.from_messages(
+    [
+        ("system", system_text_relevance),
+        ("human", "Retrieved document: \n\n {document} \n\n User question: {question}"),
+    ]
+)
+
+hallucination_prompt = ChatPromptTemplate.from_messages(
+    [
+        ("system", system_text_hallucination),
+        ("human", "Set of facts: \n\n {documents} \n\n LLM generation: {generation}"),
+    ]
+)
+
+answer_prompt = ChatPromptTemplate.from_messages(
+    [
+        ("system", system_text_answer_eval),
+        ("human", "User question: \n\n {question} \n\n LLM generation: {generation}"),
+    ]
+)
+
+
+#--------------------------------------Write ques again -----------------------------
+     
+re_write_prompt = ChatPromptTemplate.from_messages(
+    [
+        ("system", system),
+        (
+            "human","""Here is the initial question: \n\n {question} \n,
+             Here is the document: \n\n {documents} \n ,
+             Formulate an improved question. if possible other return 'question not relevant'."""
+        ),
+    ]
+)
+question_rewriter = re_write_prompt | model | StrOutputParser()
 
 #-------------------------------------- CREATE STATE --------------------------------
 class GraphState(TypedDict):
     
     chat_history: Annotated[list[BaseMessage], add_messages]
-    answer: AIMessage
-    retrieved_context: str
-    evaluation: Literal['REVISE',"ACCEPT"]
-    iteration: int
-
-# to be provided
-    max_iteration: int
-    user_query: HumanMessage  
+    question: str
+    generation: str
+    documents: list[str]
+    filter_documents: list[str]
+    unfilter_documents: list[str]  
 
 
 
 # ----------------------------------- retrieve_context NODE fn-----------------------------------
 def retrieve_context(state: GraphState):
     
-    user_query = state['user_query'].content
+    question = state['question']
     
     # Context chain adapted from your original structure
     context_chain = (
@@ -96,85 +163,153 @@ def retrieve_context(state: GraphState):
         | StrOutputParser()
     )
     
-    retrieved_context = context_chain.invoke(user_query) # human msg to str 
+    documents = context_chain.invoke(question)
 
-    return {'retrieved_context': retrieved_context, 'chat_history': [HumanMessage(user_query)]}
+    return {"documents": documents, "question": question, 'chat_history': [HumanMessage(question)]}
 
 
-# --------------------------------------------- gen_result NODE fn--------------------------------------
+# --------------------------------------------- grading NODE fn--------------------------------------
 
-def generate_result(state: GraphState):
-    user_query = state['user_query'].content
-    retrieved_context = state['retrieved_context']
-    chat_history = state['chat_history']
-
-    # Templating for the initial answer generation
-    template = ChatPromptTemplate(
-        [
-            ('system', system_text.format(retrieved_context="{retrieved_context}")),
-            MessagesPlaceholder(variable_name='chat_history'),
-            ('human', '{user_query}')
-        ]
-    )
-    prompt = template.invoke({
-        'retrieved_context': retrieved_context, 
-        'chat_history': chat_history, 
-        'user_query': user_query
-    })
+def grade_documents(state: GraphState):
+    print("----CHECK DOCUMENTS RELEVANCE TO THE QUESTION----")
+    question = state['question']
+    documents = state['documents']
     
-    return {'answer': model.invoke(prompt).content}
+    filtered_docs = []
+    unfiltered_docs = []
+    for doc in documents:
+        score=structured_relevance_grader.invoke({"question":question, "document":doc})
+        grade=score.binary_score
+        
+        if grade=='yes':
+            print("----GRADE: DOCUMENT RELEVANT----")
+            filtered_docs.append(doc)
+        else:
+            print("----GRADE: DOCUMENT NOT RELEVANT----")
+            unfiltered_docs.append(doc)
+    if len(unfiltered_docs)>1:
+        return {"unfilter_documents": unfiltered_docs,"filter_documents":[], "question": question}
+    else:
+        return {"filter_documents": filtered_docs,"unfilter_documents":[],"question": question}
 
 
 # -------------------------------------------------- conditional to approve fn ----------------------------------
 
-def evaluate(state: GraphState):
-    user_query = state['user_query'].content
-    retrieved_context = state['retrieved_context']
-    answer = state['answer']
-    iteration = state['iteration']+1
+def decide_to_generate(state: GraphState):
+    print("----ACCESS GRADED DOCUMENTS----")
+    state["question"]
+    unfiltered_documents = state["unfilter_documents"]
+    filtered_documents = state["filter_documents"]
+    
+    
+    if unfiltered_documents:
+        print("----ALL THE DOCUMENTS ARE NOT RELEVANT TO QUESTION, TRANSFORM QUERY----")
+        return "transform_query"
+    if filtered_documents:
+        print("----DECISION: GENERATE----")
+        return "generate"
+    
 
-    answer_evaluate = check_answer.format(user_query = user_query, retrieved_context  = retrieved_context, answer = answer)
-
-    evaluation = model.invoke(answer_evaluate).content
-
-    if iteration > state['max_iteration']:
-        evaluation = 'ACCEPT'
-
-    if evaluation == 'ACCEPT':
-        return {
-            'evaluation': evaluation,
-            'chat_history': [AIMessage(answer)],  # add_messages will handle appending
-            'iteration': iteration
-        }
-
-    return {
-        'evaluation': evaluation,
-        'iteration': iteration
-    }
+#---------------------------------------------------- generate answer ------------------------------------------------
+def generate(state:GraphState):
+    print("----GENERATE----")
+    question=state["question"]
+    documents=state["documents"]
+    
+    generation = rag_chain.invoke({"context": documents,"question":question})
+    return {"documents":documents,"question":question,"generation":generation.content, 'chat_history': [AIMessage(generation.content)]}
 
 
-def route_evaluation(state: GraphState):
+#------------------------------------------------- transform query --------------------------------------------------
+def transform_query(state:GraphState):
+    question=state["question"]
+    documents=state["documents"]
+    
+    print(f"this is my document{documents}")
+    response = question_rewriter.invoke({"question":question,"documents":documents})
+    print(f"----RESPONSE---- {response}")
+    if response == 'question not relevant':
+        print("----QUESTION IS NOT AT ALL RELEVANT----")
+        return {"documents":documents,"question":response,"generation":"question was not at all relevant"}
+    else:   
+        return {"documents":documents,"question":response}
+    
+#---------------------------------------------------------- gen after transform---------------------------------------
+    
 
-    if state['evaluation'] == 'ACCEPT':
-        return 'approved'
+def decide_to_generate_after_transformation(state:GraphState):
+    question=state["question"]
+    
+    if question=="question not relevant":
+        return "query_not_at_all_relevant"
     else:
-        return 'needs_improvement'
+        return "Retriever"
+    
 
-
+# ----------------------------------------------------------------------------------------------------------------------
+def grade_generation_vs_documents_and_question(state:GraphState):
+    print("---CHECK HELLUCINATIONS---")
+    question= state['question']
+    documents = state['documents']
+    generation = state["generation"]
+    
+    score = structured_hallucination_grader.invoke({"documents":documents,"generation":generation})
+    
+    grade = score.binary_score
+    
+    #Check hallucinations
+    if grade=='yes':
+        print("---DECISION: GENERATION IS GROUNDED IN DOCUMENTS---")
+        
+        print("---GRADE GENERATION vs QUESTION ---")
+        
+        score = structured_answer_grader.invoke({"question":question,"generation":generation})
+        
+        grade = score.binary_score
+        
+        if grade=='yes':
+            print("---DECISION: GENERATION ADDRESS THE QUESTION ---")
+            return "useful"
+        else:
+            print("---DECISION: GENERATION IS NOT GROUNDED IN DOCUMENTS, RE-TRY---TRANSFORM QUERY")
+            return "not useful"
+    else:
+        print("---DECISION: GENERATION IS NOT GROUNDED IN DOCUMENTS, RE-TRY---TRANSFORM QUERY")
+        "not useful"
      
 
 #-------------------------------------------- graph creation --------------------------------------------------------------
 
 graph = StateGraph(GraphState)
+graph.add_node("Docs_Vector_Retrieve", retrieve_context)
+graph.add_node("Grading_Generated_Documents", grade_documents) 
+graph.add_node("Content_Generator", generate)
+graph.add_node("Transform_User_Query", transform_query)
 
-graph.add_node('retrieve_context', retrieve_context)
-graph.add_node('generate_result', generate_result)
-graph.add_node('evaluate', evaluate)
 
-graph.add_edge(START, 'retrieve_context')
-graph.add_edge('retrieve_context', 'generate_result')
-graph.add_edge('generate_result', 'evaluate')
-graph.add_conditional_edges('evaluate',route_evaluation, {'approved': END, 'needs_improvement':'generate_result'})
+graph.add_edge(START,"Docs_Vector_Retrieve")
+graph.add_edge("Docs_Vector_Retrieve","Grading_Generated_Documents")
+graph.add_conditional_edges("Grading_Generated_Documents",
+                            decide_to_generate,
+                            {
+                            "generate": "Content_Generator",
+                            "transform_query": "Transform_User_Query"
+                            }
+                            )
+graph.add_conditional_edges("Content_Generator",
+                            grade_generation_vs_documents_and_question,
+                            {
+                            "useful": END,
+                            "not useful": "Transform_User_Query",
+                            }
+                            )
+graph.add_conditional_edges("Transform_User_Query",
+                decide_to_generate_after_transformation,
+                {
+                "Retriever":"Docs_Vector_Retrieve",
+                "query_not_at_all_relevant":END
+                }
+                )
 
 
 #-------------------------- CREATE CHECKPOINTER AND WORKFLOW ------------------------------------
