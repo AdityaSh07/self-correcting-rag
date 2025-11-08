@@ -1,0 +1,133 @@
+========================================================================
+DOCUMENT 1: GLOBAL INFORMATION SECURITY AND ACCEPTABLE USE POLICY (IS-AUP-v4.1)
+========================================================================
+Policy ID: IS-AUP-v4.1 | Version: 4.1 | Effective Date: 2024-01-15 | Review Date: 2025-01-15
+Owner: Chief Information Security Officer (CISO) | Scope: All Employees, Contractors, and Systems Globally
+
+1. Purpose
+The purpose of this policy is to establish mandatory guidelines for the secure and appropriate use of all Apex-Tech Solutions Inc. (ATS) information assets, including hardware, software, network infrastructure, and electronic data. Adherence to this policy is non-negotiable and essential for protecting ATS's intellectual property, client data, and operational continuity.
+
+2. Confidentiality and Data Classification
+ATS employs a four-tiered data classification scheme, which dictates the security controls required for handling all information assets. All personnel must correctly classify data prior to storage, processing, or transmission.
+
+| Classification | Definition | Examples | Handling/Control Requirements |
+|---|---|---|---|
+| Public | Information intended for general public release. | Press Releases, Public Marketing Materials, Job Postings. | No required access control; must be reviewed by Communications before external release. |
+| Internal | Business information not intended for public release, but which would not cause severe harm if leaked. | General internal memos, non-sensitive project documentation, staff directory. | Requires ATS single sign-on (SSO); no external transmission without explicit management approval. |
+| Confidential | Proprietary information that could cause significant financial or reputational damage if disclosed. | Product roadmaps, Q-o-Q financial results, personnel disciplinary records, non-disclosure agreements (NDAs). | Requires two-factor authentication (2FA) for access; must be encrypted in transit and at rest; strict need-to-know basis. **This is the default classification for client-related RAG data.** |
+| Secret/Highly Restricted | Top-tier intellectual property or data whose unauthorized disclosure would cause catastrophic harm, legal action, or loss of market share. | Unpatented source code, zero-day vulnerability data, unreleased merger and acquisition (M&A) plans, Level-1 Client PII. | Access logs are mandatory; require CISO-level authorization; dedicated, isolated secure environment; physical security controls are often required. Must **never** be included in RAG systems or general knowledge bases. |
+
+3. Acceptable Use of IT Resources
+
+3.1. General Usage
+* ATS IT resources are primarily intended for legitimate business purposes. Incidental and occasional personal use is permissible, provided it does not interfere with job performance, consume excessive network resources, or violate any other policy.
+* **Prohibited Activities:** Includes, but is not limited to, unauthorized copying of copyrighted materials, installation of non-approved software, engaging in illegal activities, and accessing offensive, harassing, or threatening content.
+
+3.2. Password and Access Control
+* All passwords must meet the minimum complexity standard: at least 12 characters, including upper/lower case letters, numbers, and symbols.
+* Passwords must be changed every 90 days.
+* Sharing of credentials or access tokens is strictly forbidden under any circumstance. Violation will result in immediate disciplinary action up to and including termination.
+
+3.3. Email and Communication Systems
+* ATS email is not a secure medium for Secret/Highly Restricted data.
+* Employees must exercise caution with external emails and are required to report all suspicious messages (phishing, spam) using the designated 'Report Phish' button.
+* Use of third-party, non-approved personal email accounts for the transmission of Confidential or Secret data is strictly prohibited.
+
+4. Remote Work and Personal Devices (BYOD)
+
+4.1. Remote Access Security
+* All remote access to the ATS network must be conducted exclusively through the mandated Virtual Private Network (VPN) client.
+* Employees working remotely must ensure their work environment is secure to prevent unauthorized viewing of ATS Confidential information (e.g., locking screen when away, utilizing privacy screens).
+
+4.2. Bring Your Own Device (BYOD) Policy
+* Personal devices (laptops, tablets, smartphones) may access Internal and Public ATS resources only after installing and maintaining the mandatory Mobile Device Management (MDM) software.
+* Confidential and Secret data must **never** be stored locally on an unmanaged personal device. If Confidential data is temporarily stored, it must be encrypted and deleted immediately upon cessation of the business need.
+* ATS reserves the right to remotely wipe all ATS data from any personal device upon separation of employment or in the event of a security breach.
+
+5. Compliance and Enforcement
+* The CISO is responsible for continuous monitoring and enforcement of this policy.
+* Failure to comply with any section of this IS-AUP-v4.1 may result in disciplinary action, up to and including immediate termination of employment or contract, and potential legal action.
+* All exceptions to this policy must be formally documented and approved in writing by the CISO and the department head.
+
+---
+========================================================================
+DOCUMENT 2: HUMAN RESOURCES: EMPLOYEE COMPENSATION AND BENEFITS POLICY (HR-COMP-v3.2)
+========================================================================
+Policy ID: HR-COMP-v3.2 | Version: 3.2 | Effective Date: 2024-03-01 | Review Date: 2025-03-01
+Owner: Chief Human Resources Officer (CHRO) | Scope: All Regular Full-Time and Part-Time Employees
+
+1. Compensation Structure
+ATS is committed to providing competitive and fair compensation. The compensation structure is based on a standard system of **Salary Grade Levels (SGLs)**, which are tied to job function, experience, and market value.
+
+| SGL Range | Typical Roles | Annual Bonus Eligibility | Stock Options/RSU Grant |
+|---|---|---|---|
+| SGL 1-4 | Entry-Level/Administrative (e.g., Junior Analyst, Office Assistant) | Up to 5% of base salary | No |
+| SGL 5-8 | Professional/Specialist (e.g., Software Engineer I, Marketing Manager) | Up to 10% of base salary | Standard annual RSU grant (4-year vesting) |
+| SGL 9-12 | Senior/Lead/Managerial (e.g., Senior Product Lead, Director of Operations) | Up to 20% of base salary | Accelerated RSU/Stock Option grants |
+| SGL 13+ | Executive Leadership (e.g., VP, C-Suite) | Target 30%+ of base salary | Significant equity awards with performance triggers |
+
+* **Annual Salary Review:** All employees undergo an annual performance review in Q4, with compensation adjustments (merit increases) taking effect in Q1 of the following year. Merit increases are based on individual performance and departmental budget.
+
+2. Paid Time Off (PTO) and Leave
+
+2.1. Vacation and Sick Leave Accrual
+* **Vacation:** Full-time employees accrue 15 days of paid vacation annually for the first five years of service. After five years, accrual increases to 20 days annually. Maximum carry-over to the next year is 5 days; any excess is forfeited on December 31st.
+* **Sick Leave:** Full-time employees are granted 10 days of paid sick leave per year, available from the hire date. Sick leave does not roll over and must be used for personal or immediate family illness.
+
+2.2. Parental Leave
+* ATS provides 12 weeks of fully paid parental leave for all eligible employees (primary and secondary caregivers) following the birth or adoption of a child.
+* Eligibility requires a minimum of 12 months of continuous service prior to the leave commencement date.
+
+2.3. Bereavement Leave
+* Employees are eligible for up to 5 paid days of bereavement leave for the death of an immediate family member (spouse, child, parent, sibling).
+
+3. Employee Health and Retirement Benefits
+
+3.1. Health Insurance
+* ATS offers three tiers of medical coverage (Bronze, Silver, Gold PPO) through GlobalCare Partners.
+* The company contributes 80% of the premium for the Silver PPO plan. Employees selecting Bronze or Gold will have the $X equivalent applied to their plan cost.
+* Enrollment and changes are permitted during the annual open enrollment period (November 1st - November 30th) or due to a qualifying life event (QLE).
+
+3.2. Retirement Savings (401k/Superannuation)
+* ATS offers a 401(k) retirement plan with an employer match.
+* **Employer Match:** ATS matches 100% of employee contributions up to the first 3% of salary, and 50% of contributions on the next 2% of salary.
+* **Vesting Schedule:** Employer matching contributions are subject to a 3-year cliff vesting schedule. Employees are 0% vested until their 3rd anniversary, at which point they become 100% vested. Employee contributions are always 100% vested immediately.
+
+4. Professional Development and Training
+* **Tuition Reimbursement:** ATS will reimburse up to $5,000 USD per calendar year for pre-approved, job-relevant higher education courses or professional certifications. Pre-approval from both the direct manager and HR is mandatory.
+* **Mandatory Training:** All employees must complete the annual Information Security and Anti-Harassment training modules by September 30th each year. Failure to complete mandatory training will result in restricted system access.
+
+---
+========================================================================
+DOCUMENT 3: VENDOR AND PROCUREMENT MANAGEMENT POLICY (PROC-VEND-v1.5)
+========================================================================
+Policy ID: PROC-VEND-v1.5 | Version: 1.5 | Effective Date: 2024-05-10 | Review Date: 2025-05-10
+Owner: Chief Financial Officer (CFO) | Scope: All Employees and Departments engaged in purchasing goods or services.
+
+1. Purchase Request Authority and Limits
+All expenditures must follow the defined Approval Matrix based on the total contract value (TCV).
+
+| Transaction Value (TCV) | Approver Required | Notes |
+|---|---|---|
+| $0 - $5,000 | Direct Manager | Single quote required. |
+| $5,001 - $25,000 | Director/Department Head | Minimum of two written quotes required. |
+| $25,001 - $100,000 | VP-Level Executive | Minimum of three competitive bids required. Procurement review is mandatory. |
+| >$100,000 | CFO and CEO/COO | Full legal review and competitive tender process is mandatory. |
+
+2. Vendor Due Diligence and Security Assessment
+Any new vendor that will handle or store ATS Confidential data (including client data for the RAG knowledge base) must undergo a full security and compliance review (SCA) prior to contract signing.
+
+2.1. Security Assessment Criteria:
+* **ISO 27001/SOC 2 Type 2:** Certification is mandatory for all Cloud Service Providers (CSPs) or vendors hosting client-facing applications.
+* **Data Residency:** Vendors must agree to store and process ATS data only in approved geographical regions (currently North America or EU). Storage in non-approved regions requires CISO and Legal approval.
+* **Right to Audit:** All contracts must include a clause granting ATS the right to conduct an independent security audit with 30 days written notice.
+
+2.2. Contract Requirements
+* All vendor agreements must be reviewed and countersigned by the ATS Legal Department.
+* Standard terms must include confidentiality clauses extending one year post-contract termination.
+* Payment terms are standardized at **Net 45** days unless explicitly negotiated otherwise by the CFO.
+
+3. Approved Vendor List (AVL)
+* All approved vendors are listed in the central Procurement Management System (ProMS).
+* Employees must first attempt to source goods/services from the AVL. Purchasing outside the AVL requires justification of unique need and VP-level sign-off.
+* **Preferred RAG Data Storage Vendor:** *Vector-Secure Cloud Services* has been pre-approved for all Confidential data storage related to RAG systems and is on the AVL. All new vector database deployments must utilize this vendor or secure a specific, documented exception.
