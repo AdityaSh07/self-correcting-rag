@@ -1,45 +1,76 @@
-**Self-Correcting RAG Chatbot**
+# 🤖 Self-Correcting RAG: An Adaptive LLM Agent
+This project is an advanced Retrieval-Augmented Generation (RAG) chatbot built with LangGraph. It goes far beyond a simple RAG chain by implementing a stateful, cyclic graph that allows the agent to iteratively self-correct its own retrieval and generation processes.
 
-# 🚀 Overview
-The Self-Correcting RAG Chatbot is an advanced conversational AI application designed to provide highly accurate and contextually relevant answers by autonomously evaluating and refining its own responses.
+The system can reason about the quality of its own work. It dynamically routes its flow to:
 
-Unlike traditional Retrieval-Augmented Generation (RAG) systems that execute a simple retrieve-and-generate sequence, this project implements a critical self-correction loop powered by LangGraph. If the initial answer fails an internal quality check against the retrieved context, the system enters an iterative revision cycle until a high-confidence answer is produced or a maximum revision limit is reached.
+Grade retrieved documents for relevance.
 
-This project showcases a robust, production-ready pattern for building reliable and trustworthy LLM applications.
+Transform the user's query if retrieval fails.
 
-# ✨ Key Features
-Self-Correction Loop: Employs a LangGraph state machine to iteratively generate, evaluate, and revise answers, minimizing factual errors and improving response quality.
+Grade its own generated answer for hallucinations.
 
-Advanced RAG: Uses the mmr (Maximal Marginal Relevance) search in the retriever to ensure a diverse yet relevant set of documents is retrieved, enhancing the context.
+Loop for a set number of retries before gracefully failing.
 
-Modular Architecture: Built with LangChain and LangGraph, providing a clear, maintainable, and scalable structure.
+Provide a fallback answer from the LLM's general knowledge as a last resort.
 
-Gemini-Powered Intelligence: Leverages Google's Gemini 2.5 Flash model for fast, high-quality content generation and sophisticated answer evaluation.
+This repository serves as a production-ready pattern for building reliable and fault-tolerant LLM applications.
 
-Modern Tech Stack: Utilizes Flask for the backend API to handle user requests and JavaScript for a simple, responsive frontend interface.
+# ✨ Core Features
+Adaptive RAG Flow: Uses a LangGraph state machine to dynamically route based on the quality of retrieved context and generated answers.
 
-Persistent Vector Store: Uses Chroma and HuggingFace Embeddings (sentence-transformers/all-MiniLM-L6-v2) for efficient document indexing and retrieval.
+Iterative Self-Correction: The graph can loop back on itself. If a generated answer is found to be ungrounded, the system automatically triggers a new attempt by transforming the query.
 
-# ⚙️ Architecture (LangGraph Flow)
-The application is structured as a state machine that follows a continuous refinement process:
+Document Relevance Grading: A dedicated grading_documents node filters out irrelevant context before it reaches the generator, saving compute and improving accuracy.
 
-START
+Robust Error Handling:
 
-retrieve_context: Retrieves relevant documents using the user query and populates the state's context.
+Max Iteration Limit: A built-in counter (check_iteration) prevents infinite loops.
 
-generate_result: Generates an initial answer using the retrieved context and the chat history.
+Fallback Synthesis: If the system cannot find a grounded answer after its retries, it routes to a generate_fallback_answer node, using the LLM's general knowledge while issuing a clear warning to the user.
 
-evaluate: A dedicated LLM call evaluates the generated answer against the retrieved context to check for relevance and factual grounding.
+Input Validation: A fast-fail path (query_not_at_all_relevant) rejects nonsensical or out-of-scope queries immediately.
 
-route_evaluation (Conditional Edge):
+Full-Stack Interface: A Flask API serves the RAG agent, and a custom HTML/CSS/JavaScript frontend provides a simple chat interface.
 
-IF ACCEPT or Max Iterations Reached: Routes to END.
+# ⚙️ System Architecture
+The core of this project is the LangGraph state machine. The flow is not linear; it's a cyclic graph that routes based on a series of LLM-powered checks.
 
-IF REVISE / needs_improvement: Routes back to generate_result for another revision attempt.
+The Flow Explained:
+Retrieve (START): Fetches context from ChromaDB.
 
-# 📈 LangGraph Workflow Diagram
-![Self-Correcting RAG Graph Flow](assets/workflow.png)
+Grade Documents: Checks if the retrieved docs are relevant.
 
+If YES: Proceeds to content_generator.
+
+If NO: Routes to check_iteration to begin a retry.
+
+Generate: Creates an answer based on the (now-verified) context.
+
+Grade Generation: Checks the answer for hallucinations and relevance.
+
+If YES ("useful"): Routes to END and returns the answer.
+
+If NO ("not useful"): Routes to check_iteration.
+
+The Loop Gate (Error Handling):
+
+check_iteration: Increments the retry counter.
+
+route: A router checks the counter against max_count.
+
+If Retries Left: Routes to transform_user_query.
+
+If Max Retries Hit: Routes to generate_fallback_answer (Graceful Exit 1).
+
+The Retry Path:
+
+transform_user_query: Rewrites the query.
+
+If Query is Irrelevant: Routes to END (Graceful Exit 2).
+
+If Query is Rewritten: Routes back to vector_retrieved_docs to restart the loop.
+
+![RAG Workflow Architecture](assets/workflow.png)
 
 # 🛠️ Tech Stack
 Frameworks: LangChain, LangGraph
@@ -54,13 +85,5 @@ Backend: Flask
 
 Frontend: HTML/CSS/JavaScript
 
-
-# Dependencies: 
-
-langchain-google-genai
-langchain-huggingface
-langgraph
-langchain-core
-langchain-community
-python-dotenv
-Flask
+# Dependencies:
+langchain-google-genai langchain-huggingface langgraph langchain-core langchain-community python-dotenv Flask
