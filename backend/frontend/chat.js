@@ -141,3 +141,22 @@ if (newChatBtn && messagesEl) {
   });
 }
 
+const logoutBtn = document.getElementById("logout-btn");
+if (logoutBtn) {
+  logoutBtn.addEventListener("click", async () => {
+    try {
+      const response = await fetch("/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+
+      if (response.ok) {
+        window.location.href = "/";
+      }
+    } catch (error) {
+      console.error("Logout error:", error);
+      window.location.href = "/";
+    }
+  });
+}
+

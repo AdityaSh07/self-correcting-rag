@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Support Portal – Access</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="/frontend/styles.css" />
+  </head>
+  <body class="page page--centered">
+    <div class="card card--auth">
+      <header class="card__header">
+        <h1 class="card__title">Customer Support Console</h1>
+        <p class="card__subtitle">
+          Sign in or create an account to access your AI assistant.
+        </p>
+      </header>
+
+      <div class="auth-toggle">
+        <button
+          type="button"
+          class="auth-toggle__tab auth-toggle__tab--active"
+          data-target="login"
+        >
+          Sign in
+        </button>
+        <button type="button" class="auth-toggle__tab" data-target="signup">
+          Create account
+        </button>
+      </div>
+
+      <div class="auth-divider"></div>
+
+      <form id="login-form" class="form auth-form auth-form--visible">
+        <div class="form__field">
+          <label for="login-email" class="form__label">Email</label>
+          <input
+            id="login-email"
+            name="email"
+            type="email"
+            class="input"
+            placeholder="you@example.com"
+            required
+          />
+        </div>
+
+        <div class="form__field">
+          <label for="login-password" class="form__label">Password</label>
+          <input
+            id="login-password"
+            name="password"
+            type="password"
+            class="input"
+            placeholder="••••••••"
+            required
+          />
+        </div>
+
+        <button type="submit" class="button button--primary">
+          <span class="button__label">Sign in</span>
+        </button>
+
+        <p id="login-error" class="form__error" hidden></p>
+      </form>
+
+      <div class="auth-divider auth-divider--between"></div>
+
+      <form id="signup-form" class="form auth-form">
+        <div class="form__field">
+          <label for="signup-email" class="form__label">Email</label>
+          <input
+            id="signup-email"
+            name="email"
+            type="email"
+            class="input"
+            placeholder="you@example.com"
+            required
+          />
+        </div>
+
+        <div class="form__field">
+          <label for="signup-password" class="form__label">Password</label>
+          <input
+            id="signup-password"
+            name="password"
+            type="password"
+            class="input"
+            placeholder="Choose a password"
+            minlength="6"
+            required
+          />
+        </div>
+
+        <div class="form__field">
+          <label for="signup-password-confirm" class="form__label"
+            >Confirm password</label
+          >
+          <input
+            id="signup-password-confirm"
+            name="passwordConfirm"
+            type="password"
+            class="input"
+            placeholder="Repeat your password"
+            minlength="6"
+            required
+          />
+        </div>
+
+        <button type="submit" class="button button--primary">
+          <span class="button__label">Create account</span>
+        </button>
+
+        <p id="signup-error" class="form__error" hidden></p>
+        <p id="signup-success" class="form__success" hidden>
+          Account created. You can now sign in.
+        </p>
+      </form>
+    </div>
+
+    <script src="/frontend/login.js"></script>
+  </body>
+</html>
+
