@@ -1,26 +1,29 @@
-from flask import Flask, request, render_template, jsonify
-from flask_cors import CORS
-from models.model import chatbot, checkpointer
-from langchain_core.messages import HumanMessage
+from fastapi import FastAPI, Response, status, HTTPException, Depends
+from backend.app import models
+from backend.app import database
+from backend.app.routers import auth, user
+from fastapi.middleware.cors import CORSMiddleware
 
-CONFIG = {'configurable': {'thread_id': '1'}}
+models.Base.metadata.create_all(bind=database.engine)
 
-app =Flask(__name__)
-CORS(app)
+app = FastAPI()
 
-@app.route('/', methods = ['GET','POST'])
-def chat():
-    if request.method == 'GET':
-        return render_template('index.html')
-    
-    data = request.get_json()
-    
-    json = chatbot.invoke(
-        {'question': data['user_query'], 'count':0, 'max_count': 2}, checkpointer = checkpointer, config=CONFIG
-    )
+# 1. Define the origins that are allowed to make requests to your API
+origins = [
+    "http://localhost:3000",      # React/Next.js default
+    "http://localhost:5173",      # Vite default
+    "http://127.0.0.1:5500",      # Live Server default
+]
 
-    return jsonify({'ai_message': json['generation']})
+# 2. Add the middleware to your FastAPI app
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,             # Allows specific origins
+    allow_credentials=True,
+    allow_methods=["*"],               # Allows all HTTP methods (GET, POST, etc.)
+    allow_headers=["*"],               # Allows all headers
+)
 
+app.include_router(user.router)
 
-if __name__ == '__main__':
-    app.run()
+app.include_router(auth.router)

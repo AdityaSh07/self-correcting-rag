@@ -1,3 +1,9 @@
 .env
 chroma_db
 documents\doc.txt
+oauth.py
+
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
