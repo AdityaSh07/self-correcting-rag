@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from .. import database
-from .. import schemas, utils, models, oauth2
+from .. import utils, models, oauth2
 from fastapi import Response
 from ..config import settings
 
@@ -27,10 +27,10 @@ def login(
     response.set_cookie(
         key="access_token", 
         value=access_token, 
-        httponly=True,   # Prevents JS access (anti xss)
+        httponly=True,   # anti xss
         max_age=settings.access_token_expire_minutes*60,    # 24hrs
         samesite="lax",  # CSRF protection
-        secure=False     # Set to True in production (HTTPS)
+        secure=False     # set true in production with HTTPS
     )
 
     return {"message": "Login successful"}

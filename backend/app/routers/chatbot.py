@@ -1,64 +1,78 @@
+import logging
+import traceback
+
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
-import asyncio
+
+from langchain_core.messages import AIMessageChunk
 
 from .. import oauth2, database, models, schemas
 from ..rag import rag_chatbot, GraphState
-from langchain_core.messages import HumanMessage
 
+logger = logging.getLogger(__name__)
 
 router = APIRouter(
     prefix="/chatbot",
     tags=["Chatbot"],
 )
 
+# Only stream tokens produced by these graph nodes (the actual answer generators).
+# Other nodes that call the LLM (grading, rewriting) are excluded.
+_STREAM_NODES = frozenset({"content_generator", "generate_fallback_answer"})
+
 
 async def stream_rag_response(question: str, user_id: int):
+    """Stream LLM tokens from the RAG graph as they are generated.
+
+    Uses LangGraph's ``astream(stream_mode="messages")`` which intercepts
+    every chat-model call inside the graph and yields ``AIMessageChunk``
+    objects in real time, while the nodes still receive the full response
+    for state updates.  We filter chunks so only the final-answer nodes
+    (``content_generator`` and ``generate_fallback_answer``) are forwarded
+    to the client.
     """
-    Invoke the RAG graph and stream the final answer.
-    """
+    initial_state: GraphState = {
+        "question": question,
+        "chat_history": [],
+        "generation": "",
+        "documents": [],
+        "filter_documents": [],
+        "unfilter_documents": [],
+        "count": 0,
+        "max_count": 3,
+    }
+
+    config = {"configurable": {"thread_id": f"user_{user_id}"}}
+    yielded_any = False
+
     try:
-        # Initialize the graph state
-        initial_state: GraphState = {
-            "question": question,
-            "chat_history": [],
-            "generation": "",
-            "documents": [],
-            "filter_documents": [],
-            "unfilter_documents": [],
-            "count": 0,
-            "max_count": 3,
-        }
-        
-        # Run the RAG graph with a config (unique thread_id per user for checkpointing)
-        # Use asyncio.to_thread to run the synchronous invoke in a thread pool
-        config = {"configurable": {"thread_id": f"user_{user_id}"}}
-        final_state = await asyncio.to_thread(rag_chatbot.invoke, initial_state, config)
-        
-        # Extract the final generation
-        final_answer = final_state.get("generation", "")
-        
-        if not final_answer:
-            final_answer = "I apologize, but I couldn't generate a response. Please try rephrasing your question."
-        
-        # Stream the answer word by word for better UX
-        words = final_answer.split()
-        for i, word in enumerate(words):
-            if i > 0:
-                yield " "
-            yield word
-            # Small delay to simulate streaming (can be removed for faster response)
-            await asyncio.sleep(0.02)
-            
-    except Exception as e:
-        import traceback
-        error_msg = f"Error processing your request: {str(e)}\n"
-        # Log the full traceback for debugging
-        print(f"RAG Error: {traceback.format_exc()}")
-        for char in error_msg:
-            yield char
-            await asyncio.sleep(0.01)
+        async for msg_chunk, metadata in rag_chatbot.astream(
+            initial_state, config, stream_mode="messages"
+        ):
+            # Only forward text chunks from the answer-generation nodes
+            if (
+                isinstance(msg_chunk, AIMessageChunk)
+                and metadata.get("langgraph_node") in _STREAM_NODES
+                and msg_chunk.content
+            ):
+                yielded_any = True
+                yield msg_chunk.content
+
+        if not yielded_any:
+            # The graph finished without streaming from a generation node
+            # (e.g. query was deemed entirely irrelevant).
+            # Fall back to the stored generation in the checkpointed state.
+            state_snapshot = rag_chatbot.get_state(config)
+            generation = state_snapshot.values.get("generation", "")
+            yield generation or (
+                "I couldn't generate a response. "
+                "Please try rephrasing your question."
+            )
+
+    except Exception as exc:
+        logger.exception("RAG streaming error")
+        yield f"Error processing your request: {exc}"
 
 
 @router.post("/stream")
@@ -67,15 +81,12 @@ async def chat_stream(
     db: Session = Depends(database.get_db),
     current_user: models.User = Depends(oauth2.get_current_user),
 ):
-    """
-    Stream responses from the RAG chatbot.
-    """
+    """Stream responses from the RAG chatbot token-by-token."""
     if not request.message or not request.message.strip():
         raise HTTPException(status_code=400, detail="Message cannot be empty")
-    
-    async def event_generator():
-        async for chunk in stream_rag_response(request.message, current_user.id):
-            yield chunk
-    
-    return StreamingResponse(event_generator(), media_type="text/plain")
+
+    return StreamingResponse(
+        stream_rag_response(request.message, current_user.id),
+        media_type="text/plain",
+    )
 
