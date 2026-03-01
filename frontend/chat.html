@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Support Portal – Chatbot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="/frontend/styles.css" />
+  </head>
+  <body class="page">
+    <div class="layout">
+      <aside class="sidebar">
+        <div class="sidebar__brand">
+          <span class="sidebar__logo">◎</span>
+          <span class="sidebar__title">Support Console</span>
+        </div>
+        <div class="sidebar__section">
+          <p class="sidebar__label">Session</p>
+          <button id="new-chat" class="chip">New conversation</button>
+        </div>
+        <div class="sidebar__section sidebar__section--bottom">
+          <button id="logout-btn" class="button button--secondary">
+            <span class="button__label">Logout</span>
+          </button>
+        </div>
+      </aside>
+
+      <main class="chat">
+        <header class="chat__header">
+          <div>
+            <h1 class="chat__title">Support Assistant</h1>
+            <p class="chat__subtitle">
+              You are connected as a logged-in user. Ask anything about your
+              customers.
+            </p>
+          </div>
+        </header>
+
+        <section id="messages" class="chat__messages" aria-live="polite"></section>
+
+        <form id="chat-form" class="chat__composer">
+          <textarea
+            id="chat-input"
+            class="input input--multiline"
+            rows="1"
+            placeholder="Ask a question about a customer issue..."
+            required
+          ></textarea>
+          <button type="submit" class="button button--primary">
+            <span class="button__label">Send</span>
+          </button>
+        </form>
+      </main>
+    </div>
+
+    <script src="/frontend/chat.js"></script>
+  </body>
+</html>
+
