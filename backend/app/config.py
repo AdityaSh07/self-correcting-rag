@@ -34,7 +34,7 @@ settings = Settings()
 
 class LLMConfig(BaseSettings):
 
-    LLM_MODEL_NAME :str = "llama3.2"
+    LLM_MODEL_NAME :str = "deepseek-r1:7b"
     LLM_TEMPERATURE : float = 0.8
     EMBEDDING_MODEL_NAME: str = "sentence-transformers/all-MiniLM-L6-v2"
 

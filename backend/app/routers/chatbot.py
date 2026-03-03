@@ -44,25 +44,33 @@ async def stream_rag_response(question: str, user_id: int):
     }
 
     config = {"configurable": {"thread_id": f"user_{user_id}"}}
-    yielded_any = False
+
+    # Buffer chunks per generation node so we only yield the LAST one.
+    # This prevents intermediate RAG retry answers from leaking to the user
+    # when the pipeline eventually falls back to generate_fallback_answer.
+    node_chunks: dict[str, list[str]] = {}
+    last_generation_node: str | None = None
 
     try:
         async for msg_chunk, metadata in rag_chatbot.astream(
             initial_state, config, stream_mode="messages"
         ):
-            # Only forward text chunks from the answer-generation nodes
+            node = metadata.get("langgraph_node")
             if (
                 isinstance(msg_chunk, AIMessageChunk)
-                and metadata.get("langgraph_node") in _STREAM_NODES
+                and node in _STREAM_NODES
                 and msg_chunk.content
             ):
-                yielded_any = True
-                yield msg_chunk.content
+                node_chunks.setdefault(node, []).append(msg_chunk.content)
+                last_generation_node = node
 
-        if not yielded_any:
-            # The graph finished without streaming from a generation node
-            # (e.g. query was deemed entirely irrelevant).
-            # Fall back to the stored generation in the checkpointed state.
+        if last_generation_node:
+            # Yield only the final generation node's buffered output
+            for chunk in node_chunks[last_generation_node]:
+                yield chunk
+        else:
+            # Graph ended without any generation node producing output
+            # (e.g. query deemed entirely irrelevant — routed to END directly)
             state_snapshot = rag_chatbot.get_state(config)
             generation = state_snapshot.values.get("generation", "")
             yield generation or (
