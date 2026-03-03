@@ -9,6 +9,7 @@ class GraphState(TypedDict):
     chat_history: Annotated[list[BaseMessage], add_messages]
     question: str
     generation: str
+    generation_grade: str
     documents: list[str]
     filter_documents: list[str]
     unfilter_documents: list[str]

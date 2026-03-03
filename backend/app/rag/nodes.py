@@ -1,5 +1,3 @@
-"""All node and conditional-edge functions for the RAG LangGraph."""
-
 import logging
 
 from langchain_core.messages import HumanMessage, AIMessage
@@ -57,7 +55,7 @@ def grade_documents(state: GraphState) -> dict:
         try:
             prompt = grade_prompt.invoke({"question": question, "document": doc})
             score = structured_relevance_grader.invoke(prompt)
-            grade = score.binary_score
+            grade = score.binary_score.strip().lower()
         except Exception:
             logger.exception("Relevance grading failed for a document — treating as irrelevant")
             grade = "no"
@@ -69,9 +67,10 @@ def grade_documents(state: GraphState) -> dict:
             logger.debug("Document NOT RELEVANT")
             unfiltered_docs.append(doc)
 
-    if len(unfiltered_docs) > 1:
-        return {"unfilter_documents": unfiltered_docs, "filter_documents": [], "question": question}
-    return {"filter_documents": filtered_docs, "unfilter_documents": [], "question": question}
+    if not filtered_docs:
+        logger.info("No relevant documents found — all %d doc(s) were irrelevant", len(unfiltered_docs))
+        return {"documents": [], "unfilter_documents": unfiltered_docs, "filter_documents": [], "question": question}
+    return {"documents": filtered_docs, "filter_documents": filtered_docs, "unfilter_documents": [], "question": question}
 
 
 def generate(state: GraphState) -> dict:
@@ -163,12 +162,12 @@ def decide_to_generate(state: GraphState) -> str:
     unfiltered_documents = state["unfilter_documents"]
     filtered_documents = state["filter_documents"]
 
-    if unfiltered_documents:
-        logger.info("Documents not relevant — will transform query")
-        return "check_iter"
     if filtered_documents:
         logger.info("Relevant documents found — will generate")
         return "generate"
+    if unfiltered_documents:
+        logger.info("No relevant documents — will transform query")
+        return "check_iter"
     logger.warning("No documents available after grading — will transform query")
     return "check_iter"
 
@@ -181,6 +180,11 @@ def decide_to_generate_after_transformation(state: GraphState) -> str:
 
 
 def grade_generation_vs_documents_and_question(state: GraphState) -> str:
+    """Pure state reader — route based on the grade computed by grade_generation node."""
+    return state.get("generation_grade", "not useful")
+
+
+def grade_generation(state: GraphState) -> dict:
     """Grade the generation for hallucinations and question relevance."""
     logger.info("Checking for hallucinations")
     question = state["question"]
@@ -190,10 +194,10 @@ def grade_generation_vs_documents_and_question(state: GraphState) -> str:
     try:
         prompt = hallucination_prompt.invoke({"documents": documents, "generation": generation})
         score = structured_hallucination_grader.invoke(prompt)
-        grade = score.binary_score
+        grade = score.binary_score.strip().lower()
     except Exception:
         logger.exception("Hallucination grading failed — treating as not useful")
-        return "not useful"
+        return {"generation_grade": "not useful"}
 
     if grade == "yes":
         logger.info("Generation is grounded in documents")
@@ -201,20 +205,20 @@ def grade_generation_vs_documents_and_question(state: GraphState) -> str:
         try:
             ans_prompt = answer_prompt.invoke({"question": question, "generation": generation})
             score = structured_answer_grader.invoke(ans_prompt)
-            grade = score.binary_score
+            grade = score.binary_score.strip().lower()
         except Exception:
             logger.exception("Answer grading failed — treating as not useful")
-            return "not useful"
+            return {"generation_grade": "not useful"}
 
         if grade == "yes":
             logger.info("Generation addresses the question")
-            return "useful"
+            return {"generation_grade": "useful"}
         else:
             logger.info("Generation does not address the question — retrying")
-            return "not useful"
+            return {"generation_grade": "not useful"}
     else:
         logger.info("Generation is NOT grounded in documents — retrying")
-        return "not useful"
+        return {"generation_grade": "not useful"}
 
 
 def route(state: GraphState) -> str:

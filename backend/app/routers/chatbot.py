@@ -1,5 +1,4 @@
 import logging
-import traceback
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
@@ -36,6 +35,7 @@ async def stream_rag_response(question: str, user_id: int):
         "question": question,
         "chat_history": [],
         "generation": "",
+        "generation_grade": "",
         "documents": [],
         "filter_documents": [],
         "unfilter_documents": [],

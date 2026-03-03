@@ -1,11 +1,12 @@
 import logging
 import threading
+import os
 
 from langchain_community.document_loaders import DirectoryLoader, TextLoader
-from langchain_community.vectorstores import Chroma
+from langchain_chroma import Chroma
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-from ..config import LLMConfig
+from ..config import llm_config as LLMConfig
 from .llm import embed_model
 
 logger = logging.getLogger(__name__)
@@ -28,28 +29,51 @@ RETRIEVER_LAMBDA_MULT = LLMConfig.RETRIEVER_LAMBDA_MULT
 
 
 def load_and_split_documents():
+    logger.info("Loading documents from: %s (glob=%s)", DOCUMENTS_DIR, DOCUMENTS_GLOB)
     loader = DirectoryLoader(
-        path=DOCUMENTS_DIR,
+        path=str(DOCUMENTS_DIR),
         glob=DOCUMENTS_GLOB,
         loader_cls=TextLoader,
+        loader_kwargs={"encoding": "utf-8"},
+        silent_errors=False,
+        show_progress=True,
     )
     documents = loader.load()
+    logger.info("Loaded %d document(s)", len(documents))
+    if not documents:
+        raise RuntimeError(
+            f"No documents found in '{DOCUMENTS_DIR}' matching '{DOCUMENTS_GLOB}'. "
+            "Check that the docs folder exists and contains .txt files."
+        )
 
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=CHUNK_SIZE,
         chunk_overlap=CHUNK_OVERLAP,
     )
     chunks = text_splitter.split_documents(documents)
+    logger.info("Split into %d chunk(s)", len(chunks))
     return chunks
 
 def build_vector_store(chunks):
-    vec_store = Chroma(
-        embedding_function=embed_model,
-        persist_directory=CHROMA_PERSIST_DIR,
+    chroma_dir = str(CHROMA_PERSIST_DIR)
+    if os.path.exists(chroma_dir) and len(os.listdir(chroma_dir)) > 0:
+        db = Chroma(
+            persist_directory=chroma_dir,
+            embedding_function=embed_model,
+            collection_name=CHROMA_COLLECTION,
+        )
+        if db._collection.count() > 0:
+            print(f"Loading existing vector store ({db._collection.count()} docs)...")
+            return db
+        print("Existing vector store is empty — rebuilding from documents...")
+
+    print(f"Embedding {len(chunks)} chunks into vector store...")
+    return Chroma.from_documents(
+        documents=chunks,
+        embedding=embed_model,
+        persist_directory=chroma_dir,
         collection_name=CHROMA_COLLECTION,
     )
-    vec_store.add_documents(chunks)
-    return vec_store
 
 def _build_retriever():
     """Build the document retriever from scratch."""

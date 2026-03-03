@@ -1,0 +1,34 @@
+# Web Framework
+fastapi
+uvicorn
+python-multipart
+
+# Database
+sqlalchemy
+
+# Auth & Security
+python-jose
+pwdlib[argon2]
+
+# Validation & Settings
+pydantic
+pydantic-settings
+pydantic[email]
+
+# Environment
+python-dotenv
+
+# LangChain & LangGraph
+langchain
+langchain-core
+langchain-community
+langchain-text-splitters
+langchain-google-genai
+langchain-huggingface
+langgraph
+langchainhub
+
+# Embeddings & Vector Store
+sentence-transformers
+transformers
+chromadb

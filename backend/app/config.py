@@ -1,4 +1,9 @@
 from pydantic_settings import BaseSettings
+from pathlib import Path 
+
+current_file = Path(__file__).resolve()
+project_root = current_file.parents[2] 
+DOCUMENTS_DIRECTORY = project_root / "docs"
 
 class Settings(BaseSettings):
     database_hostname: str 
@@ -29,19 +34,22 @@ settings = Settings()
 
 class LLMConfig(BaseSettings):
 
-    LLM_MODEL_NAME = "gemini-2.5-flash"
-    LLM_TEMPERATURE = 0.8
-    EMBEDDING_MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
+    LLM_MODEL_NAME :str = "llama3.2"
+    LLM_TEMPERATURE : float = 0.8
+    EMBEDDING_MODEL_NAME: str = "sentence-transformers/all-MiniLM-L6-v2"
 
-    DOCUMENTS_DIR = "documents"
-    DOCUMENTS_GLOB = "*.txt"
-    CHROMA_PERSIST_DIR = "chroma_db"
-    CHROMA_COLLECTION = "embeddings"
+    DOCUMENTS_DIR: Path = DOCUMENTS_DIRECTORY
+    DOCUMENTS_GLOB: str = "*.txt"
+    CHROMA_PERSIST_DIR: Path = project_root / "chroma_db"
+    CHROMA_COLLECTION: str = "embeddings"
 
-    CHUNK_SIZE = 500
-    CHUNK_OVERLAP = 50
-    RETRIEVER_SEARCH_TYPE = "mmr"
-    RETRIEVER_K = 5
-    RETRIEVER_LAMBDA_MULT = 0.8
+    CHUNK_SIZE: int = 500
+    CHUNK_OVERLAP: int = 50
+    RETRIEVER_SEARCH_TYPE: str = "mmr"
+    RETRIEVER_K: int = 5
+    RETRIEVER_LAMBDA_MULT: float = 0.8
 
-    RAG_PROMPT_HUB_ID = "rlm/rag-prompt"
+    RAG_PROMPT_HUB_ID: str = "rlm/rag-prompt"
+
+
+llm_config = LLMConfig()

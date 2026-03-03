@@ -1,4 +1,5 @@
 from pydantic import BaseModel, EmailStr
+from typing import Optional
 
 
 class UserCreate(BaseModel):
@@ -12,3 +13,7 @@ class UserOut(BaseModel):
 
 class ChatRequest(BaseModel):
     message: str
+
+
+class TokenData(BaseModel):
+    id: Optional[int] = None
