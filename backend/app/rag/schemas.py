@@ -23,3 +23,4 @@ class GradeAnswer(BaseModel):
     binary_score: str = Field(
         description="Answer addresses the question, 'yes' or 'no'"
     )
+

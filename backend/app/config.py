@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int
 
     GOOGLE_API_KEY : str
+    GROQ_API_KEY : str
 
     LANGCHAIN_TRACING_V2 : bool
     LANGCHAIN_ENDPOINT : str
@@ -34,8 +35,8 @@ settings = Settings()
 
 class LLMConfig(BaseSettings):
 
-    LLM_MODEL_NAME :str = "deepseek-r1:7b"
-    LLM_TEMPERATURE : float = 0.8
+    LLM_MODEL_NAME :str = "llama-3.3-70b-versatile"
+    LLM_TEMPERATURE : float = 0
     EMBEDDING_MODEL_NAME: str = "sentence-transformers/all-MiniLM-L6-v2"
 
     DOCUMENTS_DIR: Path = DOCUMENTS_DIRECTORY
