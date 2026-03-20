@@ -3,6 +3,7 @@ from dotenv import load_dotenv
 # from langchain_ollama import ChatOllama
 from langchain_groq import ChatGroq
 from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_ollama import ChatOllama
 from ..config import llm_config as LLMConfig
 
 from langsmith import Client
@@ -21,12 +22,9 @@ RAG_PROMPT_HUB_ID = LLMConfig.RAG_PROMPT_HUB_ID
 
 # --------------------------------- MODELS ------------------------------------
 
-model = ChatGroq(
+llm = ChatGroq(
     model=LLM_MODEL_NAME, 
-    temperature=LLM_TEMPERATURE         
+    temperature=LLM_TEMPERATURE
 )
-
 embed_model = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL_NAME)
 
-rag_prompt = client.pull_prompt(RAG_PROMPT_HUB_ID)
-rag_chain = rag_prompt | model

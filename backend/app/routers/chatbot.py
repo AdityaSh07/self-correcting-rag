@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from langchain_core.messages import AIMessageChunk
 
 from .. import oauth2, database, models, schemas
-from ..rag import rag_chatbot, GraphState
+from ..rag.graph import rag_chatbot
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +18,7 @@ router = APIRouter(
 
 # Only stream tokens produced by these graph nodes (the actual answer generators).
 # Other nodes that call the LLM (grading, rewriting) are excluded.
-_STREAM_NODES = frozenset({"content_generator", "generate_fallback_answer"})
+_STREAM_NODES = frozenset({"generate_direct", "generate_from_context", "no_answer_found", "revise_answer"})
 
 
 async def stream_rag_response(question: str, user_id: int):
@@ -31,17 +31,20 @@ async def stream_rag_response(question: str, user_id: int):
     (``content_generator`` and ``generate_fallback_answer``) are forwarded
     to the client.
     """
-    initial_state: GraphState = {
-        "question": question,
-        "chat_history": [],
-        "generation": "",
-        "generation_grade": "",
-        "documents": [],
-        "filter_documents": [],
-        "unfilter_documents": [],
-        "count": 0,
-        "max_count": 3,
-    }
+    initial_state = {
+    "question": question,
+    "retrieval_query": question,  # Start with the original question
+    "rewrite_tries": 0,                                        # ✅ important
+    "docs": [],
+    "relevant_docs": [],
+    "context": "",
+    "answer": "",
+    "issup": "",
+    "evidence": [],
+    "retries": 0,
+    "isuse": "not_useful",
+    "use_reason": "",
+}
 
     config = {"configurable": {"thread_id": f"user_{user_id}"}}
 
@@ -72,7 +75,7 @@ async def stream_rag_response(question: str, user_id: int):
             # Graph ended without any generation node producing output
             # (e.g. query deemed entirely irrelevant — routed to END directly)
             state_snapshot = rag_chatbot.get_state(config)
-            generation = state_snapshot.values.get("generation", "")
+            generation = state_snapshot.values.get("answer", "")
             yield generation or (
                 "I couldn't generate a response. "
                 "Please try rephrasing your question."

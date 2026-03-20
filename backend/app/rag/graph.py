@@ -1,178 +1,94 @@
-from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.graph import StateGraph, START, END
+from .state import State
+from .nodes import *
+from langgraph.checkpoint.memory import InMemorySaver
 
-from .state import GraphState
-from .nodes import (
-    retrieve_context,
-    grade_documents,
-    generate,
-    transform_query,
-    check_iteration,
-    generate_fallback_answer,
-    decide_to_generate,
-    decide_to_generate_after_transformation,
-    grade_generation_vs_documents_and_question,
-    route,
+g = StateGraph(State)
+
+# --------------------
+# Nodes
+# --------------------
+g.add_node("decide_retrieval", decide_retrieval)
+g.add_node("generate_direct", generate_direct)
+g.add_node("retrieve", retrieve)
+
+g.add_node("is_relevant", is_relevant)
+g.add_node("generate_from_context", generate_from_context)
+g.add_node("no_answer_found", no_answer_found)
+
+# IsSUP + revise loop
+g.add_node("is_sup", is_sup)
+g.add_node("revise_answer", revise_answer)
+
+# IsUSE
+g.add_node("is_use", is_use)
+
+# ✅ NEW: rewrite question for better retrieval
+g.add_node("rewrite_question", rewrite_question)
+
+# --------------------
+# Edges
+# --------------------
+g.add_edge(START, "decide_retrieval")
+
+g.add_conditional_edges(
+    "decide_retrieval",
+    route_after_decide,
+    {"generate_direct": "generate_direct", "retrieve": "retrieve"},
 )
 
-# # --------------------------------- GRAPH NODES & EDGES (structure) -------------------------
-
-# graph = StateGraph(GraphState)
-
-# graph.add_node("vector_retrieved_docs", retrieve_context)
-# graph.add_node("grading_documents", grade_documents)
-# graph.add_node("content_generator", generate)
-# graph.add_node("grade_generation", grade_generation)
-# graph.add_node("transform_user_query", transform_query)
-# graph.add_node("check_iteration", check_iteration)
-# graph.add_node("generate_fallback_answer", generate_fallback_answer)
-
-# # --- EDGES ---
-
-# # 1. Start -> Retrieve
-# graph.add_edge(START, "vector_retrieved_docs")
-
-# # 2. Retrieve -> Grade Docs
-# graph.add_edge("vector_retrieved_docs", "grading_documents")
-
-# # 3. Grade Docs -> Decide Path
-# graph.add_conditional_edges(
-#     "grading_documents",
-#     decide_to_generate,
-#     {"generate": "content_generator", "check_iter": "check_iteration"},
-# )
-
-# # 4. Content Generator -> Grade Generation (own node so grading LLM calls don't stream)
-# graph.add_edge("content_generator", "grade_generation")
-
-# # 5. Grade Generation -> Decide Path (pure state reader, no LLM calls)
-# graph.add_conditional_edges(
-#     "grade_generation",
-#     grade_generation_vs_documents_and_question,
-#     {"useful": END, "not useful": "check_iteration"},
-# )
-
-# # 6. Check Iteration -> Decide Loop Fate
-# graph.add_conditional_edges(
-#     "check_iteration",
-#     route,
-#     {"transform_user_query": "transform_user_query", "max_count_reached_end": "generate_fallback_answer"},
-# )
-
-# # 7. Transform Query -> Re-retrieve or End
-# graph.add_conditional_edges(
-#     "transform_user_query",
-#     decide_to_generate_after_transformation,
-#     {"Retriever": "vector_retrieved_docs", "query_not_at_all_relevant": END},
-# )
-
-# # 8. Fallback -> End
-# graph.add_edge("generate_fallback_answer", END)
-
-# # --------------------------------- COMPILE ------------------------------------
-
-# checkpointer = InMemorySaver()
-# rag_chatbot = graph.compile(checkpointer=checkpointer)
-
-
-graph = StateGraph(GraphState)
-
-graph.add_node("vector_retrieved_docs", retrieve_context)
-
-graph.add_node("grading_documents", grade_documents) 
-
-graph.add_node("content_generator", generate)
-
-graph.add_node("transform_user_query", transform_query)
-
-graph.add_node('check_iteration', check_iteration)
-
-graph.add_node("generate_fallback_answer", generate_fallback_answer)
-
-
-
-
-
-# --- EDGES ---
-
-
-
-# 1. Start -> Retrieve
-
-graph.add_edge(START, "vector_retrieved_docs")
-
-
-
-# 2. Retrieve -> Grade Docs
-
-graph.add_edge("vector_retrieved_docs", "grading_documents")
-
-
-
-# 3. Grade Docs -> Decide Path 
-
-graph.add_conditional_edges("grading_documents",
-
-                            decide_to_generate,
-
-                            {
-
-                            "generate": "content_generator",
-
-                            "check_iter": "check_iteration" 
-
-                            })
-
-
-
-# 4. Content Generator -> Decide Path
-
-graph.add_conditional_edges("content_generator",
-
-                            grade_generation_vs_documents_and_question,
-
-                            {
-
-                            "useful": END,
-
-                            "not useful": "check_iteration",
-
-                            })
-
-
-
-# 5. Check Iteration -> Decide Loop Fate
-
-graph.add_conditional_edges("check_iteration",
-
-                            route,
-
-                            {
-
-                            "transform_user_query": "transform_user_query",
-
-                            "max_count_reached_end": "generate_fallback_answer" 
-
-                            })
-
-
-
-graph.add_conditional_edges("transform_user_query",
-
-                            decide_to_generate_after_transformation,
-
-                            {
-
-                            "Retriever": "vector_retrieved_docs",
-
-                            "query_not_at_all_relevant": END 
-
-                            })
-
-# 7. Final Apology Node -> End
-
-graph.add_edge("generate_fallback_answer", END)
+g.add_edge("generate_direct", END)
+
+# Retrieve -> relevance -> (generate | no_answer_found)
+g.add_edge("retrieve", "is_relevant")
+
+g.add_conditional_edges(
+    "is_relevant",
+    route_after_relevance,
+    {
+        "generate_from_context": "generate_from_context",
+        "no_answer_found": "no_answer_found",
+    },
+)
+
+g.add_edge("no_answer_found", END)
+
+# --------------------
+# Generate -> IsSUP -> (IsUSE | revise) loop
+# --------------------
+g.add_edge("generate_from_context", "is_sup")
+
+g.add_conditional_edges(
+    "is_sup",
+    route_after_issup,
+    {
+        "accept_answer": "is_use",      # fully_supported (or max retries) -> go to IsUSE
+        "revise_answer": "revise_answer",
+    },
+)
+
+g.add_edge("revise_answer", "is_sup")  # 🔁 loop back to IsSUP
+
+# --------------------
+# IsUSE routing
+#   - useful -> END
+#   - not_useful -> rewrite_question -> retrieve (try again)
+#   - give up -> no_answer_found -> END
+# --------------------
+g.add_conditional_edges(
+    "is_use",
+    route_after_isuse,
+    {
+        "END": END,
+        "rewrite_question": "rewrite_question",
+        "no_answer_found": "no_answer_found",
+    },
+)
+
+# rewrite -> retrieve -> relevance -> ...
+g.add_edge("rewrite_question", "retrieve")
 
 
 checkpointer = InMemorySaver()
-rag_chatbot = graph.compile(checkpointer=checkpointer)
+rag_chatbot = g.compile(checkpointer=checkpointer)
+rag_chatbot

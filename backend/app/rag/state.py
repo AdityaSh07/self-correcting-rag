@@ -1,25 +1,28 @@
-from typing import TypedDict, Annotated
+from typing import Literal, TypedDict, List
 
+from langchain_core.documents import Document
 from langchain_core.messages import BaseMessage
 from langgraph.graph.message import add_messages
+# ------------------------------------- new
 
-
-class GraphState(TypedDict):
-
-    
-
-    chat_history: Annotated[list[BaseMessage], add_messages]
-
+class State(TypedDict):
     question: str
 
-    generation: str
+    # ✅ NEW: what we actually send to vector retriever
+    retrieval_query: str
+    rewrite_tries: int
+    
+    need_retrieval: bool
+    docs: List[Document]
+    relevant_docs: List[Document]
+    context: str
+    answer: str
 
-    documents: list[str]
+    # Post-generation verification
+    issup: Literal["fully_supported", "partially_supported", "no_support"]
+    evidence: List[str]
 
-    filter_documents: list[str]
+    retries: int
 
-    unfilter_documents: list[str]
-
-    count: int
-
-    max_count: int
+    isuse: Literal["useful", "not_useful"]
+    use_reason: str

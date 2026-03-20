@@ -40,14 +40,14 @@ class LLMConfig(BaseSettings):
     EMBEDDING_MODEL_NAME: str = "sentence-transformers/all-MiniLM-L6-v2"
 
     DOCUMENTS_DIR: Path = DOCUMENTS_DIRECTORY
-    DOCUMENTS_GLOB: str = "*.txt"
-    CHROMA_PERSIST_DIR: Path = project_root / "chroma_db"
-    CHROMA_COLLECTION: str = "embeddings"
+    DOCUMENTS_GLOB: str = "*.pdf"
+    FAISS_PERSIST_DIR: Path = project_root / "faiss_index"
+    FAISS_COLLECTION: str = "embeddings"
 
     CHUNK_SIZE: int = 500
     CHUNK_OVERLAP: int = 50
     RETRIEVER_SEARCH_TYPE: str = "mmr"
-    RETRIEVER_K: int = 5
+    RETRIEVER_K: int = 4
     RETRIEVER_LAMBDA_MULT: float = 0.8
 
     RAG_PROMPT_HUB_ID: str = "rlm/rag-prompt"
