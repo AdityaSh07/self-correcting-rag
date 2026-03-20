@@ -1,6 +1,6 @@
 from typing import Literal, TypedDict, List
 from langchain_core.documents import Document
-from langchain_core.messages import BaseMessage
+from langchain_core.messages import BaseMessage, HumanMessage, AIMessage
 from .state import State
 from .llm import llm
 from .prompts import (
@@ -18,22 +18,31 @@ from .schemas import RetrieveDecision, RelevanceDecision, IsSUPDecision, IsUSEDe
 from .graders import should_retrieve_llm, relevance_llm, issup_llm, isuse_llm, rewrite_llm
 from .retriever import retriever
 
-
+#---------------------------------------------------------------------------------------------------
 MAX_RETRIES = 3
-
-#  ------------------------------------------------- new
+#---------------------------------------------------------------------------------------------------
 
 def decide_retrieval(state: State):
+    chat_history = state.get("chat_history", [])
     decision: RetrieveDecision = should_retrieve_llm.invoke(
-        decide_retrieval_prompt.format_messages(question=state["question"])
+        decide_retrieval_prompt.format_messages(
+            question=state["question"],
+            chat_history=chat_history
+        )
     )
-    return {"need_retrieval": decision.should_retrieve}
+    return {
+        "need_retrieval": decision.should_retrieve
+    }
 
 def route_after_decide(state: State) -> Literal["generate_direct", "retrieve"]:
     return "retrieve" if state["need_retrieval"] else "generate_direct"
 
 def generate_direct(state: State):
-    out = llm.invoke(direct_generation_prompt.format_messages(question=state["question"]))
+    chat_history = state.get("chat_history", [])
+    out = llm.invoke(direct_generation_prompt.format_messages(
+        question=state["question"],
+        chat_history=chat_history
+    ))
     return {"answer": out.content}
 
 def retrieve(state: State):
@@ -64,14 +73,27 @@ def generate_from_context(state: State):
     context = "\n\n---\n\n".join([d.page_content for d in state.get("relevant_docs", [])]).strip()
     if not context:
         return {"answer": "No answer found.", "context": ""}
+    
+    chat_history = state.get("chat_history", [])
     out = llm.invoke(
-        rag_generation_prompt.format_messages(question=state["question"], context=context)
+        rag_generation_prompt.format_messages(
+            question=state["question"], 
+            context=context,
+            chat_history=chat_history
+        )
     )
     return {"answer": out.content, "context": context}
 
 def no_answer_found(state: State):
     return {"answer": "No answer found.", "context": ""}
 
+def update_history(state: State):
+    return {
+        "chat_history": [
+            HumanMessage(content=state["question"]),
+            AIMessage(content=state["answer"])
+        ]
+    }
 
 def is_sup(state: State):
     decision: IsSUPDecision = issup_llm.invoke(
@@ -125,9 +147,9 @@ def is_use(state: State):
 
 MAX_REWRITE_TRIES = 3  # tune (2–4 is usually fine)
 
-def route_after_isuse(state: State) -> Literal["END", "rewrite_question", "no_answer_found"]:
+def route_after_isuse(state: State) -> Literal["end_with_updated_history", "rewrite_question", "no_answer_found"]:
     if state.get("isuse") == "useful":
-        return "END"
+        return "end_with_updated_history"  # will route to update_history -> END
 
     if state.get("rewrite_tries", 0) >= MAX_REWRITE_TRIES:
         return "no_answer_found"
@@ -135,11 +157,13 @@ def route_after_isuse(state: State) -> Literal["END", "rewrite_question", "no_an
     return "rewrite_question"
 
 def rewrite_question(state: State):
+    chat_history = state.get("chat_history", [])
     decision: RewriteDecision = rewrite_llm.invoke(
         rewrite_for_retrieval_prompt.format_messages(
             question=state["question"],
             retrieval_query=state.get("retrieval_query", ""),
             answer=state.get("answer", ""),
+            chat_history=chat_history
         )
     )
 

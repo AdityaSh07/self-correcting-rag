@@ -1,9 +1,9 @@
-# Web Framework
+# Web Framework & Server
 fastapi
 uvicorn
 python-multipart
 
-# Database
+# Database & ORM
 sqlalchemy
 psycopg2
 
@@ -19,18 +19,20 @@ pydantic[email]
 # Environment
 python-dotenv
 
-# LangChain & LangGraph
+# Agent & Orchestration (LangChain / LangGraph)
 langchain
 langchain-core
 langchain-community
 langchain-text-splitters
-langchain-ollama
-langchain-huggingface
 langgraph
 langchainhub
-langchain-groq
+langsmith
 
-# Embeddings & Vector Store
-sentence-transformers
-transformers
-chromadb
+# LLMs & Inference integrations
+langchain-groq
+langchain-google-genai
+
+# Embeddings & Vector Stores
+faiss-cpu
+PyPDF2
+pypdf

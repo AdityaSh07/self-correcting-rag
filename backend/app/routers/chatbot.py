@@ -34,7 +34,7 @@ async def stream_rag_response(question: str, user_id: int):
     initial_state = {
     "question": question,
     "retrieval_query": question,  # Start with the original question
-    "rewrite_tries": 0,                                        # ✅ important
+    "rewrite_tries": 0,                                        # important
     "docs": [],
     "relevant_docs": [],
     "context": "",
@@ -50,7 +50,7 @@ async def stream_rag_response(question: str, user_id: int):
 
     # Buffer chunks per generation node so we only yield the LAST one.
     # This prevents intermediate RAG retry answers from leaking to the user
-    # when the pipeline eventually falls back to generate_fallback_answer.
+    
     node_chunks: dict[str, list[str]] = {}
     last_generation_node: str | None = None
 
@@ -72,8 +72,7 @@ async def stream_rag_response(question: str, user_id: int):
             for chunk in node_chunks[last_generation_node]:
                 yield chunk
         else:
-            # Graph ended without any generation node producing output
-            # (e.g. query deemed entirely irrelevant — routed to END directly)
+            
             state_snapshot = rag_chatbot.get_state(config)
             generation = state_snapshot.values.get("answer", "")
             yield generation or (

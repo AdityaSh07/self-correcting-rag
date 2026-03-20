@@ -1,4 +1,4 @@
-from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from .llm import llm
 
 # --------------------------------- PROMPT TEMPLATES --------------------------
@@ -11,9 +11,10 @@ decide_retrieval_prompt = ChatPromptTemplate.from_messages(
             "Return JSON with key: should_retrieve (boolean).\n\n"
             "Guidelines:\n"
             "- should_retrieve=True if answering requires specific facts from company documents.\n"
-            "- should_retrieve=False for general explanations/definitions or simple greetings.\n"
+            "- should_retrieve=False for general explanations/definitions, simple greetings, or if the user's question can be fully answered using the provided chat history.\n"
             "- If unsure, choose True."
         ),
+        MessagesPlaceholder(variable_name="chat_history"),
         ("human", "Question: {question}"),
     ]
 )
@@ -23,10 +24,11 @@ direct_generation_prompt = ChatPromptTemplate.from_messages(
     [
         (
             "system",
-            "Answer using only your general knowledge.\n"
-            "If it requires specific company info, say:\n"
+            "Answer using only your general knowledge and the conversation history.\n"
+            "If it requires specific company info that is not in the history, say:\n"
             "'I don't know based on my general knowledge.'"
         ),
+        MessagesPlaceholder(variable_name="chat_history"),
         ("human", "{question}"),
     ]
 )
@@ -60,9 +62,10 @@ rag_generation_prompt = ChatPromptTemplate.from_messages(
             "You are a business rag chatbot.\n\n"
             "You will receive a CONTEXT block from internal company documents.\n"
             "Task:\n"
-            "Answer the question based on the context"
-            "Dont mention that you are getting a context in your answer"
+            "Answer the question based on the context and the conversation history.\n"
+            "Dont mention that you are getting a context in your answer."
         ),
+        MessagesPlaceholder(variable_name="chat_history"),
         ("human", "Question:\n{question}\n\nContext:\n{context}"),
     ]
 )
@@ -159,6 +162,7 @@ rewrite_for_retrieval_prompt = ChatPromptTemplate.from_messages(
             "Rules:\n"
             "- Keep it short (6–16 words).\n"
             "- Preserve key entities (e.g., AI Enterprises, plan names).\n"
+            "- If the question uses pronouns referring to the chat history, resolve them to specific terms.\n"
             "- Add 2–5 high-signal keywords that likely appear in policy/pricing docs.\n"
             "- Remove filler words.\n"
             "- Do NOT answer the question.\n"
@@ -169,6 +173,7 @@ rewrite_for_retrieval_prompt = ChatPromptTemplate.from_messages(
             "Q: 'What is AI Enterprises refund policy?'\n"
             "-> {{'retrieval_query': 'AI Enterprises refund policy cancellation refund timeline charges'}}"
         ),
+        MessagesPlaceholder(variable_name="chat_history"),
         (
             "human",
             "QUESTION:\n{question}\n\n"

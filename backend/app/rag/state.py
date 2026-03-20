@@ -1,14 +1,14 @@
-from typing import Literal, TypedDict, List
+from typing import Literal, TypedDict, List, Annotated
 
 from langchain_core.documents import Document
-from langchain_core.messages import BaseMessage
+from langchain_core.messages import BaseMessage, AnyMessage
 from langgraph.graph.message import add_messages
-# ------------------------------------- new
 
 class State(TypedDict):
+    chat_history: Annotated[list[AnyMessage], add_messages]
     question: str
 
-    # ✅ NEW: what we actually send to vector retriever
+    # what we actually send to vector retriever
     retrieval_query: str
     rewrite_tries: int
     
@@ -26,3 +26,5 @@ class State(TypedDict):
 
     isuse: Literal["useful", "not_useful"]
     use_reason: str
+
+    chat_history: List[BaseMessage]

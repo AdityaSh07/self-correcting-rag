@@ -1,9 +1,8 @@
 from dotenv import load_dotenv
-# from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 # from langchain_ollama import ChatOllama
 from langchain_groq import ChatGroq
-from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_ollama import ChatOllama
+# from langchain_huggingface import HuggingFaceEmbeddings
 from ..config import llm_config as LLMConfig
 
 from langsmith import Client
@@ -26,5 +25,6 @@ llm = ChatGroq(
     model=LLM_MODEL_NAME, 
     temperature=LLM_TEMPERATURE
 )
-embed_model = HuggingFaceEmbeddings(model_name=EMBEDDING_MODEL_NAME)
+embed_model = GoogleGenerativeAIEmbeddings(model=EMBEDDING_MODEL_NAME,
+    output_dimensionality=768)
 

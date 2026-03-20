@@ -37,7 +37,7 @@ class LLMConfig(BaseSettings):
 
     LLM_MODEL_NAME :str = "llama-3.3-70b-versatile"
     LLM_TEMPERATURE : float = 0
-    EMBEDDING_MODEL_NAME: str = "sentence-transformers/all-MiniLM-L6-v2"
+    EMBEDDING_MODEL_NAME: str = "models/gemini-embedding-2-preview"
 
     DOCUMENTS_DIR: Path = DOCUMENTS_DIRECTORY
     DOCUMENTS_GLOB: str = "*.pdf"

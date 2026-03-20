@@ -16,15 +16,17 @@ g.add_node("is_relevant", is_relevant)
 g.add_node("generate_from_context", generate_from_context)
 g.add_node("no_answer_found", no_answer_found)
 
-# IsSUP + revise loop
+
 g.add_node("is_sup", is_sup)
 g.add_node("revise_answer", revise_answer)
 
-# IsUSE
+
 g.add_node("is_use", is_use)
 
-# ✅ NEW: rewrite question for better retrieval
+
 g.add_node("rewrite_question", rewrite_question)
+
+g.add_node("update_history", update_history)
 
 # --------------------
 # Edges
@@ -37,9 +39,9 @@ g.add_conditional_edges(
     {"generate_direct": "generate_direct", "retrieve": "retrieve"},
 )
 
-g.add_edge("generate_direct", END)
+g.add_edge("generate_direct", "update_history")
 
-# Retrieve -> relevance -> (generate | no_answer_found)
+
 g.add_edge("retrieve", "is_relevant")
 
 g.add_conditional_edges(
@@ -51,11 +53,9 @@ g.add_conditional_edges(
     },
 )
 
-g.add_edge("no_answer_found", END)
+g.add_edge("no_answer_found", "update_history")
 
-# --------------------
-# Generate -> IsSUP -> (IsUSE | revise) loop
-# --------------------
+
 g.add_edge("generate_from_context", "is_sup")
 
 g.add_conditional_edges(
@@ -67,25 +67,22 @@ g.add_conditional_edges(
     },
 )
 
-g.add_edge("revise_answer", "is_sup")  # 🔁 loop back to IsSUP
+g.add_edge("revise_answer", "is_sup")  
 
-# --------------------
-# IsUSE routing
-#   - useful -> END
-#   - not_useful -> rewrite_question -> retrieve (try again)
-#   - give up -> no_answer_found -> END
-# --------------------
+
 g.add_conditional_edges(
     "is_use",
     route_after_isuse,
     {
-        "END": END,
+        "end_with_updated_history": "update_history",
         "rewrite_question": "rewrite_question",
         "no_answer_found": "no_answer_found",
     },
 )
 
-# rewrite -> retrieve -> relevance -> ...
+g.add_edge("update_history", END) # 
+
+
 g.add_edge("rewrite_question", "retrieve")
 
 
