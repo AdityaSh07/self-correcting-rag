@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Support Portal – Create Account</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="/frontend/styles.css" />
+</head>
+<body class="page page-auth">
+    <div class="bg-circles">
+        <div class="circle circle-1"></div>
+        <div class="circle circle-2"></div>
+        <div class="circle circle-3"></div>
+        <div class="circle circle-4"></div>
+    </div>
+
+    <div class="auth-card">
+        <div class="auth-left">
+            <div class="brand-text">Digital</div>
+            
+            <div class="auth-header">
+                <h1 class="auth-title">Next-Gen Retrieval Engine<br>For Support Teams</h1>
+                <p class="auth-subtitle">Create an account to scale your customer success.</p>
+            </div>
+
+            <form id="signup-form" class="form auth-form">
+                <div class="form-group-container">
+                    <div class="form-group border-bottom">
+                        <label for="signup-email">Email Address</label>
+                        <input id="signup-email" name="email" type="email" class="input" placeholder="name@company.com" required />
+                    </div>
+                    <div class="form-group border-bottom">
+                        <label for="signup-password">Password</label>
+                        <input id="signup-password" name="password" type="password" class="input" placeholder="Min. 8 characters" minlength="8" required />
+                    </div>
+                    <div class="form-group">
+                        <label for="signup-password-confirm">Confirm Password</label>
+                        <input id="signup-password-confirm" name="passwordConfirm" type="password" class="input" placeholder="Repeat password" required />
+                    </div>
+                </div>
+
+                <div class="action-buttons" style="margin-top: 20px;">
+                    <button type="submit" class="btn btn-primary" style="flex: 2;">Create Account</button>
+                    <a href="/" class="btn btn-outline" style="flex: 1;">Login</a>
+                </div>
+
+                <p id="signup-error" class="form__error" hidden></p>
+                <p id="signup-success" class="form__success" hidden>Account created! Redirecting to login...</p>
+            </form>
+
+            <div class="social-login">
+                <span class="social-text">Or register with:</span>
+                <div class="social-links">
+                    <a href="#">Google</a>
+                    <a href="#">GitHub</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="auth-right">
+            <nav class="top-nav">
+                <a href="#">Home</a>
+                <a href="#">About us</a>
+                <a href="#">Blog</a>
+                <a href="#">Pricing</a>
+            </nav>
+
+            <div class="illustration-container">
+                <div class="rag-graph">
+                    <!-- Central Node -->
+                    <div class="graph-node center-node">
+                        <span>LangGraph</span>
+                    </div>
+                    <!-- Orbiting Nodes -->
+                    <div class="graph-node orbit-node orbit-1"><span>Vector DB</span></div>
+                    <div class="graph-node orbit-node orbit-2"><span>LLM</span></div>
+                    <div class="graph-node orbit-node orbit-3"><span>Tools</span></div>
+                    
+                    <svg class="connecting-lines">
+                        <line x1="50%" y1="50%" x2="20%" y2="25%" class="pulse-line" />
+                        <line x1="50%" y1="50%" x2="80%" y2="40%" class="pulse-line" />
+                        <line x1="50%" y1="50%" x2="60%" y2="85%" class="pulse-line" />
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/frontend/login.js"></script>
+</body>
+</html>

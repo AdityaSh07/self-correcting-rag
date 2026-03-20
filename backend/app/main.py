@@ -34,6 +34,11 @@ async def serve_login_page():
     return FileResponse(FRONTEND_DIR / "index.html")
 
 
+@app.get("/signup", include_in_schema=False)
+async def serve_signup_page():
+    return FileResponse(FRONTEND_DIR / "signup.html")
+
+
 @app.get("/chat", include_in_schema=False)
 async def serve_chat_page():
     return FileResponse(FRONTEND_DIR / "chat.html")

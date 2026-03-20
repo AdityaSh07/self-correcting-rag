@@ -1,122 +1,85 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+<head>
     <meta charset="UTF-8" />
-    <title>Support Portal – Access</title>
+    <title>Support Portal – Login</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="stylesheet" href="/frontend/styles.css" />
-  </head>
-  <body class="page page--centered">
-    <div class="card card--auth">
-      <header class="card__header">
-        <h1 class="card__title">Customer Support Console</h1>
-        <p class="card__subtitle">
-          Sign in or create an account to access your AI assistant.
-        </p>
-      </header>
+</head>
+<body class="page page-auth">
+    <div class="bg-circles">
+        <div class="circle circle-1"></div>
+        <div class="circle circle-2"></div>
+        <div class="circle circle-3"></div>
+        <div class="circle circle-4"></div>
+    </div>
 
-      <div class="auth-toggle">
-        <button
-          type="button"
-          class="auth-toggle__tab auth-toggle__tab--active"
-          data-target="login"
-        >
-          Sign in
-        </button>
-        <button type="button" class="auth-toggle__tab" data-target="signup">
-          Create account
-        </button>
-      </div>
+    <div class="auth-card">
+        <!-- LEFT SIDE: FORM -->
+        <div class="auth-left">
+            <div class="brand-text">Advanced RAG chatbot</div>
+            
+            <div class="auth-header">
+                <h1 class="auth-title">AI Support<br>Made with LangGraph</h1>
+                <p class="auth-subtitle">Welcome back! Please login to your account.</p>
+            </div>
 
-      <div class="auth-divider"></div>
+            <form id="login-form" class="form auth-form">
+                <div class="form-group-container">
+                    <div class="form-group border-bottom">
+                        <label for="login-email">Email Address</label>
+                        <input id="login-email" name="email" type="email" class="input" placeholder="admin@digital.com" required />
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">Password</label>
+                        <input id="login-password" name="password" type="password" class="input" placeholder="admin123"" required />
+                    </div>
+                </div>
 
-      <form id="login-form" class="form auth-form auth-form--visible">
-        <div class="form__field">
-          <label for="login-email" class="form__label">Email</label>
-          <input
-            id="login-email"
-            name="email"
-            type="email"
-            class="input"
-            placeholder="you@example.com"
-            required
-          />
+                <div class="form-options">
+                    <label class="checkbox-label">
+                        <input type="checkbox" />
+                        <span>Remember Me</span>
+                    </label>
+                    <a href="#" class="forgot-link">Forgot Password?</a>
+                </div>
+
+                <div class="action-buttons">
+                    <button type="submit" class="btn btn-primary">Login</button>
+                    <a href="/signup" class="btn btn-outline">Sign Up</a>
+                </div>
+                <p id="login-error" class="form__error" hidden></p>
+            </form>
         </div>
 
-        <div class="form__field">
-          <label for="login-password" class="form__label">Password</label>
-          <input
-            id="login-password"
-            name="password"
-            type="password"
-            class="input"
-            placeholder="••••••••"
-            required
-          />
+        <!-- RIGHT SIDE: RAG/LANGGRAPH ILLUSTRATION -->
+        <div class="auth-right">
+            <nav class="top-nav">
+                <h3>Bypass Login with given example credentials</h3>
+            </nav>
+
+            <div class="illustration-container">
+                <div class="rag-graph">
+                    <!-- Central Node -->
+                    <div class="graph-node center-node">
+                        <span>LangGraph</span>
+                    </div>
+                    <!-- Orbiting Nodes -->
+                    <div class="graph-node orbit-node orbit-1"><span>Vector DB</span></div>
+                    <div class="graph-node orbit-node orbit-2"><span>LLM</span></div>
+                    <div class="graph-node orbit-node orbit-3"><span>RAG</span></div>
+                    
+                    <svg class="connecting-lines">
+                        <line x1="50%" y1="50%" x2="20%" y2="25%" class="pulse-line" />
+                        <line x1="50%" y1="50%" x2="80%" y2="40%" class="pulse-line" />
+                        <line x1="50%" y1="50%" x2="60%" y2="85%" class="pulse-line" />
+                    </svg>
+                </div>
+            </div>
         </div>
-
-        <button type="submit" class="button button--primary">
-          <span class="button__label">Sign in</span>
-        </button>
-
-        <p id="login-error" class="form__error" hidden></p>
-      </form>
-
-      <div class="auth-divider auth-divider--between"></div>
-
-      <form id="signup-form" class="form auth-form">
-        <div class="form__field">
-          <label for="signup-email" class="form__label">Email</label>
-          <input
-            id="signup-email"
-            name="email"
-            type="email"
-            class="input"
-            placeholder="you@example.com"
-            required
-          />
-        </div>
-
-        <div class="form__field">
-          <label for="signup-password" class="form__label">Password</label>
-          <input
-            id="signup-password"
-            name="password"
-            type="password"
-            class="input"
-            placeholder="Choose a password"
-            minlength="6"
-            required
-          />
-        </div>
-
-        <div class="form__field">
-          <label for="signup-password-confirm" class="form__label"
-            >Confirm password</label
-          >
-          <input
-            id="signup-password-confirm"
-            name="passwordConfirm"
-            type="password"
-            class="input"
-            placeholder="Repeat your password"
-            minlength="6"
-            required
-          />
-        </div>
-
-        <button type="submit" class="button button--primary">
-          <span class="button__label">Create account</span>
-        </button>
-
-        <p id="signup-error" class="form__error" hidden></p>
-        <p id="signup-success" class="form__success" hidden>
-          Account created. You can now sign in.
-        </p>
-      </form>
     </div>
 
     <script src="/frontend/login.js"></script>
-  </body>
+</body>
 </html>
 

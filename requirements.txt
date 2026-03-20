@@ -5,6 +5,7 @@ python-multipart
 
 # Database
 sqlalchemy
+psycopg2
 
 # Auth & Security
 python-jose
@@ -27,6 +28,7 @@ langchain-ollama
 langchain-huggingface
 langgraph
 langchainhub
+langchain-groq
 
 # Embeddings & Vector Store
 sentence-transformers
