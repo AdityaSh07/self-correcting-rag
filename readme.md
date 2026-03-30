@@ -1,48 +1,195 @@
-# Autonomous Self-Correcting RAG Agent: A Production-Ready AI
+# Autonomous Self-Correcting RAG Agent  
+### A Production-Ready Agentic AI System with LangGraph + FastAPI
 
-This project is a highly sophisticated, stateful Retrieval-Augmented Generation (RAG) chatbot, engineered with LangGraph and FastAPI. It transcends the limitations of traditional, linear LLM queries by acting as an agentic system. It utilizes a cyclic state graph to actively monitor, reflect on, and correct its own retrieval and generative processes in real-time.
+---
 
-By incorporating dedicated nodes to evaluate **document relevance**, **detect hallucinations**, **verify groundings**, and **autonomously rewrite queries**, this architecture ensures high-fidelity, contextually accurate answers to user inquiries.
+## Overview
 
-## Why LangGraph Excels Over Traditional RAG and Standard API Calls
+This project is a **stateful, self-correcting Retrieval-Augmented Generation (RAG) system** built using **LangGraph** and **FastAPI**.
 
-Traditional RAG and simple LLM API calls execute a linear "one-shot" process: searching a vector database once, feeding the result to an LLM, and outputting the response. If the retrieved chunks miss the mark or lack the complete context, the system risks outputting a hallucination or failing entirely.
+Unlike traditional RAG pipelines, this system behaves like an **intelligent agent** that can:
 
-How this LangGraph architecture differs:
-*   **Self-Reflection and Evaluation**: Before serving an answer to the user, the agent evaluates it against the retrieved context (IsSUP) to ensure it is fully grounded. It also verifies if the answer genuinely addresses the user's intent (IsUSE). 
-*   **Autonomous Query Rewriting**: If initial retrieved results are poor, or if an answer is deemed unhelpful, the system automatically rewrites the user's question, optimizes it for vector search (resolving pronouns based on chat history), and attempts retrieval again without requiring explicit user intervention.
-*   **Stateful Memory Systems**: Unlike stateless API calls, this system tracks the conversation graph securely using LangGraph's checkpointers, persisting conversation threads organically to handle follow-up questions accurately.
-*   **Early Exit Routing Strategy**: Computations and API calls are conserved by an initial routing node (`decide_retrieval`). Simple greetings or questions answerable from existing chat history bypass the expensive vector retrieval steps entirely.
+- Reflect on its own answers  
+- Detect hallucinations  
+- Rewrite queries automatically  
+- Retry retrieval when needed  
+- Maintain conversation memory  
 
-## Core System Capabilities
+💡 *It doesn’t just answer — it evaluates and improves itself.*
 
-*   **Adaptive Routing**: Dynamically chooses between direct LLM generation and vector retrieval via FAISS based on the classification of the query.
-*   **Iterative Self-Correction Loop**: Answers found to be ungrounded or unsupported immediately trigger a query transformation and re-retrieval sequence.
-*   **Document Relevance Grading**: A dedicated evaluation node strictly filters document noise and irrelevant context before passing it to the generator.
-*   **Robust Fallback and Retry Logic**: The system inherently limits itself to prevent infinite loops. Once all automated interventions fail, the agent defaults to a graceful failure handle.
-*   **Streaming Responses**: Uses LangGraph's token-by-token message streaming by intersecting graph execution with FastAPI to stream final, verified answers to users in real-time.
-*   **Secure API Architecture**: Built entirely on FastAPI, the system incorporates robust session management utilizing stateless JWTs delivered exclusively via `HttpOnly`, `SameSite=Lax` cookies, neutralizing XSS vulnerabilities and securing token transport for authenticated interactions.
+---
 
-## System Architecture and Flow
+## Authentication UI (Login System)
 
-This cyclic agent workflow routes paths using LangChain deterministic decision nodes:
+<p align="center">
+  <img src="assets/login.png" width="800"/>
+</p>
 
-1.  Intent Check (`decide_retrieval`) -> Determine if document retrieval is needed or if general knowledge/conversation history suffices.
-2.  Retrieve (`vector_retrieved_docs`) -> Extract similar topical chunks using FAISS.
-3.  Grade Relevance (`is_relevant`) -> Evaluate if the chunks are semantically on-topic to the user's inquiry.
-4.  Generative Output (`content_generator`) -> Formulate the answer strictly from verified context limits.
-5.  Grounding Verification (`is_sup`) -> Detect potential hallucinations (Self-Correction Trigger).
-6.  Usefulness Verification (`is_use`) -> Ensure the original question intent was explicitly satisfied by the constructed answer.
-7.  Auto-Transformation (`rewrite_question`) -> The query is abstractly rewritten to extract improved vector similarity from FAISS if the workflow loop is required to iterate further.
+- Secure login system using JWT  
+- HttpOnly cookies for safe authentication  
+- Session-based user interaction  
+- Clean and modern UI  
 
-![LangGraph Agent Workflow Architecture](assets/rag_graph.png)
+---
 
-## Technology Stack
+## 🖥️ Chat Interface (Support Assistant)
 
-*   Agent Framework: LangChain & LangGraph
-*   LLM Inference: Groq (via langchain-groq for high-speed inference)
-*   Vector Store: FAISS (Facebook AI Similarity Search) running locally
-*   Embeddings: HuggingFace sentence-transformers/all-MiniLM-L6-v2
-*   Backend REST API: FastAPI & Uvicorn
-*   Database: PostgreSQL with SQLAlchemy (Thread/User Persistence)
-*   Frontend Interface: Custom HTML, CSS, and JavaScript   
+<p align="center">
+  <img src="assets/retrieval.png" width="800"/>
+</p>
+
+- Real-time conversational interface  
+- Context-aware responses  
+- Smooth user experience  
+- Integrated with backend agent  
+
+---
+
+##  Why This is Better Than Traditional RAG
+
+### ❌ Traditional RAG
+- One-shot retrieval  
+- No correction mechanism  
+- High hallucination risk  
+- Stateless  
+
+### ✅ This System (LangGraph Agent)
+- Iterative reasoning loop  
+- Self-evaluation (grounding + usefulness)  
+- Automatic query rewriting  
+- Stateful conversation memory  
+
+---
+
+## System Architecture (LangGraph Workflow)
+
+<p align="center">
+  <img src="assets/rag_graph.png" width="600"/>
+</p>
+
+### Flow Breakdown:
+
+1. **Intent Check (`decide_retrieval`)**
+   - Determines if retrieval is needed  
+
+2. **Retrieve**
+   - Fetches relevant chunks from FAISS  
+
+3. **Relevance Check (`is_relevant`)**
+   - Filters noisy or irrelevant documents  
+
+4. **Generate Answer (`generate_from_context`)**
+   - Uses only grounded context  
+
+5. **Self-Evaluation**
+   - `is_sup` → Is answer grounded?  
+   - `is_use` → Is answer useful?  
+
+6. **Correction Loop**
+   - If failed → `rewrite_question` → retry  
+
+7. **Final Output**
+   - Only validated answers are returned  
+
+---
+
+## 🔄 Self-Correction & Persistence Flow
+
+<p align="center">
+  <img src="assets/persistence.png" width="600"/>
+</p>
+
+This is the **core innovation** of the system:
+
+- 🔍 Detects hallucinations before responding  
+- 🔁 Automatically rewrites queries  
+- 🎯 Improves retrieval iteratively  
+- 🧠 Maintains conversation history  
+
+---
+
+## Core Capabilities
+
+###  Adaptive Routing
+- Skips retrieval for simple queries  
+- Reduces latency and cost  
+
+###  Iterative Self-Correction
+- Retries automatically when answers fail validation  
+
+###  Document Relevance Grading
+- Ensures only meaningful context is used  
+
+###  Stateful Memory
+- Maintains conversation using LangGraph checkpointers  
+
+###  Streaming Responses
+- Token-by-token streaming via FastAPI  
+
+###  Secure API Architecture
+- JWT authentication via HttpOnly cookies  
+- Protection against XSS attacks  
+
+---
+
+##  Tech Stack
+
+| Category | Technology |
+|--------|-----------|
+| Agent Framework | LangChain + LangGraph |
+| LLM | Groq |
+| Vector DB | FAISS |
+| Embeddings | sentence-transformers/all-MiniLM-L6-v2 |
+| Backend | FastAPI + Uvicorn |
+| Database | PostgreSQL + SQLAlchemy |
+| Frontend | HTML, CSS, JavaScript |
+
+---
+
+## 📈 Example Interaction
+
+**User:**  
+> What is the company's leave structure?
+
+**System Flow:**  
+- Retrieves documents  
+- Filters relevance  
+- Generates grounded answer  
+- Verifies correctness  
+- Returns final response  
+
+---
+
+##  Project Highlights
+
+- Production-ready architecture  
+- Modular graph-based design  
+- Real-world enterprise use case  
+- Clean separation of concerns  
+- Highly extensible system  
+
+---
+
+## Conclusion
+
+This is not just a chatbot — it is a **self-correcting AI agent** that:
+
+✔ Thinks  
+✔ Evaluates  
+✔ Adapts  
+✔ Improves  
+
+---
+
+## ⭐ Support
+
+If you like this project, consider giving it a ⭐ on GitHub!
+
+---
+
+##  Future Improvements
+
+- UI enhancements (React / Next.js)   
+- Deployment (Docker + Cloud)  
+
+---
