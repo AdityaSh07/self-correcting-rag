@@ -139,7 +139,7 @@ This is the **core innovation** of the system:
 | Agent Framework | LangChain + LangGraph |
 | LLM | Groq |
 | Vector DB | FAISS |
-| Embeddings | sentence-transformers/all-MiniLM-L6-v2 |
+| Embeddings | GoogleGenerativeAIEmbeddings |
 | Backend | FastAPI + Uvicorn |
 | Database | PostgreSQL + SQLAlchemy |
 | Frontend | HTML, CSS, JavaScript |
